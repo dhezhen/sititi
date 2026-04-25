@@ -149,4 +149,74 @@ class SuperadminController {
 
         redirect('?page=superadmin.role_menus');
     }
+
+    // ── DATABASE BACKUP ──────────────────────────────────────────────
+
+    public function database(): void {
+        $db = getDB();
+        $tables = $db->query("SHOW TABLE STATUS")->fetchAll(PDO::FETCH_ASSOC);
+        $pageTitle = 'Manajemen Database';
+        require BASE_PATH . '/views/superadmin/database.php';
+    }
+
+    public function backupDatabase(): void {
+        $db = getDB();
+        
+        // Ambil semua tabel
+        $tables = [];
+        $result = $db->query("SHOW TABLES");
+        while ($row = $result->fetch(PDO::FETCH_NUM)) {
+            $tables[] = $row[0];
+        }
+
+        $sql = "-- SiTiTi Database Backup\n";
+        $sql .= "-- Generated: " . date('Y-m-d H:i:s') . "\n";
+        $sql .= "-- Host: " . DB_HOST . "\n";
+        $sql .= "-- Database: " . DB_NAME . "\n\n";
+        
+        $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
+
+        foreach ($tables as $table) {
+            // Drop Table if exists
+            $sql .= "DROP TABLE IF EXISTS `$table`;\n";
+            
+            // Create Table structure
+            $res = $db->query("SHOW CREATE TABLE `$table`")->fetch(PDO::FETCH_ASSOC);
+            $sql .= $res['Create Table'] . ";\n\n";
+
+            // Get Data
+            $stmt = $db->query("SELECT * FROM `$table`");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            if (count($rows) > 0) {
+                $sql .= "-- Data for table `$table`\n";
+                foreach ($rows as $row) {
+                    $keys = array_keys($row);
+                    $values = array_values($row);
+                    
+                    // Escape values
+                    $escapedValues = array_map(function($v) use ($db) {
+                        if ($v === null) return 'NULL';
+                        return $db->quote($v);
+                    }, $values);
+                    
+                    $sql .= "INSERT INTO `$table` (`" . implode("`, `", $keys) . "`) VALUES (" . implode(", ", $escapedValues) . ");\n";
+                }
+                $sql .= "\n";
+            }
+        }
+
+        $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
+        $filename = 'backup_db_' . DB_NAME . '_' . date('Ymd_His') . '.sql';
+        
+        // Set headers for download
+        header('Content-Type: application/sql');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        
+        echo $sql;
+        exit;
+    }
 }

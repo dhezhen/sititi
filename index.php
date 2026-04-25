@@ -254,6 +254,14 @@ switch ($page) {
         (new SuperadminController())->roleMenusUpdate();
         break;
 
+    case 'superadmin.database':
+        (new SuperadminController())->database();
+        break;
+
+    case 'superadmin.database.backup':
+        (new SuperadminController())->backupDatabase();
+        break;
+
     // ── NOTIFIKASI ────────────────────────────────────────────
     case 'notif':
         Auth::requireLogin();
