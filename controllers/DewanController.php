@@ -37,7 +37,7 @@ class DewanController {
         $pengajuan = $this->pengajuanModel->findById($id);
         if (!$pengajuan) { setFlash('danger', 'Tidak ditemukan.'); redirect('?page=dewan'); }
         $dosenModel       = new Dosen();
-        $listDosen        = $dosenModel->getActiveList();
+        $listDosen        = $dosenModel->getActiveList((int)$pengajuan['angkatan']);
         $pembimbingAktif  = $this->pembimbingModel->getByPengajuanId($id);
         $logs             = $this->logModel->getByPengajuanId($id);
         require BASE_PATH . '/views/dewan/pembimbing.php';
@@ -54,6 +54,15 @@ class DewanController {
         $catatan = trim(post('catatan'));
 
         if (!$dosen1) { setFlash('danger', 'Pembimbing 1 wajib dipilih.'); redirect('?page=dewan.pembimbing&id=' . $id); }
+        
+        // Validasi Asisten Ahli
+        $dosenModel = new Dosen();
+        $d1 = $dosenModel->findById($dosen1);
+        if ($d1 && $d1['jabatan_akademik'] === 'Asisten Ahli') {
+            setFlash('danger', 'Dosen dengan jabatan Asisten Ahli tidak dapat menjadi Pembimbing 1.');
+            redirect('?page=dewan.pembimbing&id=' . $id);
+        }
+
         if ($dosen2 && $dosen2 === $dosen1) { setFlash('danger', 'Pembimbing 1 dan 2 tidak boleh sama.'); redirect('?page=dewan.pembimbing&id=' . $id); }
 
         $pengajuan = $this->pengajuanModel->findById($id);

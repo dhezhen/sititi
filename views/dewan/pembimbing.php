@@ -29,20 +29,25 @@ require BASE_PATH . '/views/layouts/header.php';
                         <td><span class="badge bg-secondary"><?= e($pengajuan['bidang']) ?></span></td></tr>
                 </table>
                 <h6 class="fw-bold text-muted small mb-1">JUDUL</h6>
-                <p class="fw-semibold text-primary"><?= e($pengajuan['judul']) ?></p>
+                <p class="fw-semibold text-primary mb-3"><?= e($pengajuan['judul']) ?></p>
+                <h6 class="fw-bold text-muted small mb-1">RINGKASAN PROPOSAL</h6>
+                <div class="p-3 rounded-3 bg-light small mb-3" style="white-space:pre-wrap"><?= e($pengajuan['deskripsi']) ?></div>
+                <?php if ($pengajuan['file_proposal']): ?>
+                <a href="<?= UPLOAD_URL ?>/<?= e($pengajuan['file_proposal']) ?>" target="_blank" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>Lihat Proposal Lengkap
+                </a>
+                <?php endif; ?>
             </div>
         </div>
 
         <!-- Form Pembimbing -->
         <div class="card border-primary">
-            <div class="card-header bg-primary text-white"><i class="bi bi-people-fill me-2"></i>Tentukan Pembimbing</div>
+            <div class="card-header bg-primary text-white"><i class="bi bi-people-fill me-2"></i>Review & Penetapan Pembimbing</div>
             <div class="card-body">
                 <?php
-                $pb1 = null; $pb2 = null;
-                foreach ($pembimbingAktif as $pb) {
-                    if ($pb['urutan'] == 1) $pb1 = $pb;
-                    if ($pb['urutan'] == 2) $pb2 = $pb;
-                }
+                // Ambil usulan dari Kaprodi/Mahasiswa sebagai default
+                $def1 = $pengajuan['pembimbing_1_id'];
+                $def2 = $pengajuan['pembimbing_2_id'];
                 ?>
                 <form action="?page=dewan.proses" method="POST">
                     <?php csrfField(); ?>
@@ -54,11 +59,17 @@ require BASE_PATH . '/views/layouts/header.php';
                         </label>
                         <select class="form-select" id="dosen1_id" name="dosen1_id" required>
                             <option value="">-- Pilih Dosen Pembimbing 1 --</option>
-                            <?php foreach ($listDosen as $d): ?>
+                            <?php foreach ($listDosen as $d): 
+                                $isFull = ($d['workload'] ?? 0) >= MAX_PEMBIMBING_PER_ANGKATAN;
+                                $workloadText = ($d['workload'] ?? 0) . "/" . MAX_PEMBIMBING_PER_ANGKATAN;
+                            ?>
                             <option value="<?= $d['id'] ?>"
-                                    <?= ($pb1 && $pb1['dosen_id'] == $d['id']) ? 'selected' : '' ?>>
-                                <?= e($d['nama']) ?> — <?= e($d['nidn']) ?>
-                                <?= $d['bidang_keahlian'] ? '(' . e($d['bidang_keahlian']) . ')' : '' ?>
+                                    <?= $def1 == $d['id'] ? 'selected' : '' ?>
+                                    <?= $isFull ? 'class="text-danger"' : '' ?>>
+                                <?= e($d['nama']) ?> 
+                                [<?= $workloadText ?>]
+                                — <?= e($d['jabatan_akademik'] ?? '-') ?>
+                                <?= $isFull ? ' (PENUH)' : '' ?>
                             </option>
                             <?php endforeach; ?>
                         </select>
@@ -70,14 +81,24 @@ require BASE_PATH . '/views/layouts/header.php';
                         </label>
                         <select class="form-select" id="dosen2_id" name="dosen2_id">
                             <option value="">-- Tidak Ada Pembimbing 2 --</option>
-                            <?php foreach ($listDosen as $d): ?>
+                            <?php foreach ($listDosen as $d): 
+                                $isFull = ($d['workload'] ?? 0) >= MAX_PEMBIMBING_PER_ANGKATAN;
+                                $workloadText = ($d['workload'] ?? 0) . "/" . MAX_PEMBIMBING_PER_ANGKATAN;
+                            ?>
                             <option value="<?= $d['id'] ?>"
-                                    <?= ($pb2 && $pb2['dosen_id'] == $d['id']) ? 'selected' : '' ?>>
-                                <?= e($d['nama']) ?> — <?= e($d['nidn']) ?>
-                                <?= $d['bidang_keahlian'] ? '(' . e($d['bidang_keahlian']) . ')' : '' ?>
+                                    <?= $def2 == $d['id'] ? 'selected' : '' ?>
+                                    <?= $isFull ? 'class="text-danger"' : '' ?>>
+                                <?= e($d['nama']) ?> 
+                                [<?= $workloadText ?>]
+                                — <?= e($d['jabatan_akademik'] ?? '-') ?>
+                                <?= $isFull ? ' (PENUH)' : '' ?>
                             </option>
                             <?php endforeach; ?>
                         </select>
+                        <div class="form-text mt-2 text-info small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Dosen <strong>Asisten Ahli</strong> hanya dapat menjadi Pembimbing 2.
+                        </div>
                     </div>
 
                     <div class="mb-4">

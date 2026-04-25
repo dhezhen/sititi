@@ -1,3 +1,4 @@
-nama,email,nidn,kode_prodi,bidang_keahlian,no_hp
-Dr. Andi Wijaya,andi@demo.com,1122334455,IF,Kecerdasan Buatan,082111222333
-Prof. Budi Rahardjo,budi.r@demo.com,5544332211,SI,Sistem Enterprise,082111222444
+nama,email,nidn,kode_prodi,bidang_keahlian,no_hp,jabatan_akademik,pendidikan,role,password
+Dr. Andi Wijaya,andi@uniku.ac.id,1122334455,IF,Kecerdasan Buatan,082111222333,Lektor,S3
+Prof. Budi Rahardjo,budi.r@uniku.ac.id,5544332211,SI,Sistem Enterprise,082111222444,Profesor,S3
+Dr. Siti Aminah,siti@uniku.ac.id,9988776655,TI,Rekayasa Perangkat Lunak,081234567890,Asisten Ahli,S2

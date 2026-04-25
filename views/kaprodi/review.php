@@ -29,12 +29,12 @@ require BASE_PATH . '/views/layouts/header.php';
                 </table>
                 <h6 class="fw-bold mb-2 text-muted small">JUDUL</h6>
                 <p class="fw-semibold fs-6 text-primary mb-3"><?= e($pengajuan['judul']) ?></p>
-                <h6 class="fw-bold mb-2 text-muted small">DESKRIPSI</h6>
+                <h6 class="fw-bold mb-2 text-muted small">RINGKASAN PROPOSAL</h6>
                 <div class="p-3 rounded-3 mb-3" style="background:#f9fafb;white-space:pre-wrap;font-size:.9rem;line-height:1.7"><?= e($pengajuan['deskripsi']) ?></div>
                 <?php if ($pengajuan['file_proposal']): ?>
                 <a href="<?= UPLOAD_URL ?>/<?= e($pengajuan['file_proposal']) ?>" target="_blank"
                    class="btn btn-outline-danger btn-sm mb-3">
-                    <i class="bi bi-file-earmark-pdf me-1"></i>Lihat Proposal PDF
+                    <i class="bi bi-file-earmark-pdf me-1"></i>Lihat Ringkasan Proposal PDF
                 </a>
                 <?php endif; ?>
             </div>
@@ -46,6 +46,42 @@ require BASE_PATH . '/views/layouts/header.php';
                 <form action="?page=kaprodi.proses" method="POST">
                     <?php csrfField(); ?>
                     <input type="hidden" name="pengajuan_id" value="<?= $pengajuan['id'] ?>">
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Penentuan Pembimbing</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="pembimbing_1_id" class="form-label small text-muted">Pembimbing Utama</label>
+                                <select class="form-select" id="pembimbing_1_id" name="pembimbing_1_id">
+                                    <option value="">-- Pilih Pembimbing 1 --</option>
+                                    <?php foreach ($listDosen as $d): ?>
+                                    <option value="<?= $d['id'] ?>" <?= ($pengajuan['pembimbing_1_id'] ?? 0) == $d['id'] ? 'selected' : '' ?>>
+                                        <?= e($d['nama']) ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="pembimbing_2_id" class="form-label small text-muted">Pembimbing Pendamping</label>
+                                <select class="form-select" id="pembimbing_2_id" name="pembimbing_2_id">
+                                    <option value="">-- Pilih Pembimbing 2 --</option>
+                                    <?php foreach ($listDosen as $d): ?>
+                                    <option value="<?= $d['id'] ?>" <?= ($pengajuan['pembimbing_2_id'] ?? 0) == $d['id'] ? 'selected' : '' ?>>
+                                        <?= e($d['nama']) ?>
+                                    </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-text mt-2 text-info small">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Usulan mahasiswa: 
+                            <strong><?= e($pengajuan['nama_pembimbing_1'] ?? '-') ?></strong> dan 
+                            <strong><?= e($pengajuan['nama_pembimbing_2'] ?? '-') ?></strong>.
+                            <br>
+                            Dosen <strong>Asisten Ahli</strong> hanya dapat menjadi Pembimbing 2.
+                        </div>
+                    </div>
+
                     <div class="mb-4">
                         <label for="catatan" class="form-label fw-semibold">Catatan / Komentar</label>
                         <textarea class="form-control" id="catatan" name="catatan" rows="4"

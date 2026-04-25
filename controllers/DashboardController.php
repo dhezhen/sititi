@@ -27,12 +27,53 @@ class DashboardController {
             case ROLE_DEWAN:
                 $this->dewanDashboard();
                 break;
+            case ROLE_DOSEN:
+                $this->dosenDashboard();
+                break;
             case ROLE_SUPERADMIN:
                 $this->superadminDashboard();
                 break;
             default:
                 redirect('?page=403');
         }
+    }
+
+    /**
+     * Dashboard Dosen (Pembimbing saja)
+     */
+    private function dosenDashboard(): void {
+        $pembimbingModel = new Pembimbing();
+        $notifModel      = new Notifikasi();
+        
+        $userId   = Auth::id();
+        $notifasi = $notifModel->getByUserId($userId, 5);
+        
+        // Ambil mahasiswa bimbingan
+        $db = getDB();
+        $userEmail = Auth::user()['email'];
+        $stmtD = $db->prepare("SELECT id FROM dosen WHERE email = ? LIMIT 1");
+        $stmtD->execute([$userEmail]);
+        $dosenId = $stmtD->fetchColumn();
+        
+        $bimbingan = [];
+        $workload = [];
+        if ($dosenId) {
+            $dosenModel = new Dosen();
+            $workload = $dosenModel->getWorkloadByAngkatan($dosenId);
+            
+            $stmtB = $db->prepare("
+                SELECT p.*, m.nama AS nama_mahasiswa, m.nim, pb.jabatan
+                FROM pembimbing pb
+                JOIN pengajuan_judul p ON p.id = pb.pengajuan_id
+                JOIN mahasiswa m ON m.user_id = p.mahasiswa_id
+                WHERE pb.dosen_id = ?
+                ORDER BY p.created_at DESC
+            ");
+            $stmtB->execute([$dosenId]);
+            $bimbingan = $stmtB->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        require BASE_PATH . '/views/dashboard/dosen.php';
     }
 
     /**
@@ -78,6 +119,9 @@ class DashboardController {
             GROUP BY m.angkatan
             ORDER BY m.angkatan DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
+        
+        $dosenModel = new Dosen();
+        $dosenWorkload = $dosenModel->getAllWorkload();
 
         require BASE_PATH . '/views/dashboard/staff.php';
     }
@@ -119,6 +163,9 @@ class DashboardController {
             $stmtS->execute([$prodiId]);
             $angkatanStats = $stmtS->fetchAll(PDO::FETCH_ASSOC);
         }
+
+        $dosenModel = new Dosen();
+        $dosenWorkload = $dosenModel->getAllWorkload($prodiId);
 
         require BASE_PATH . '/views/dashboard/kaprodi.php';
     }

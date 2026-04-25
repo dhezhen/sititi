@@ -26,6 +26,10 @@ define('ROLE_STAFF',      'staff');
 define('ROLE_KAPRODI',    'kaprodi');
 define('ROLE_DEWAN',      'dewan');
 define('ROLE_SUPERADMIN', 'superadmin');
+define('ROLE_DOSEN',      'dosen');
+
+// Konfigurasi Bimbingan
+define('MAX_PEMBIMBING_PER_ANGKATAN', 20);
 
 // Status alur pengajuan
 define('STATUS_DRAFT',        'draft');

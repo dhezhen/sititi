@@ -10,6 +10,7 @@
  */
 
 // ── Bootstrap ──────────────────────────────────────────────
+require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/core/Auth.php';
@@ -195,6 +196,22 @@ switch ($page) {
 
     case 'admin.dosen.delete':
         (new AdminController())->dosenDelete();
+        break;
+
+    case 'admin.staff':
+        (new AdminController())->staff();
+        break;
+
+    case 'admin.staff.store':
+        (new AdminController())->staffStore();
+        break;
+
+    case 'admin.staff.update':
+        (new AdminController())->staffUpdate();
+        break;
+
+    case 'admin.staff.delete':
+        (new AdminController())->staffDelete();
         break;
 
     case 'admin.dosen.import':

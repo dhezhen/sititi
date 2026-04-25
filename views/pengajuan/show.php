@@ -79,6 +79,14 @@ require BASE_PATH . '/views/layouts/header.php';
                         <td class="fw-semibold text-muted">Terakhir Diperbarui</td>
                         <td><?= formatTanggal($pengajuan['updated_at'], true) ?></td>
                     </tr>
+                    <tr>
+                        <td class="fw-semibold text-muted">Usulan Pembimbing 1</td>
+                        <td><?= e($pengajuan['nama_pembimbing_1'] ?? '-') ?></td>
+                    </tr>
+                    <tr>
+                        <td class="fw-semibold text-muted">Usulan Pembimbing 2</td>
+                        <td><?= e($pengajuan['nama_pembimbing_2'] ?? '-') ?></td>
+                    </tr>
                 </table>
 
                 <hr>
@@ -99,7 +107,7 @@ require BASE_PATH . '/views/layouts/header.php';
 
                 <?php if ($pengajuan['file_proposal']): ?>
                 <div class="mt-3">
-                    <h6 class="fw-bold mb-2">File Proposal</h6>
+                    <h6 class="fw-bold mb-2">File Ringkasan Proposal</h6>
                     <a href="<?= UPLOAD_URL ?>/<?= e($pengajuan['file_proposal']) ?>"
                        target="_blank" class="btn btn-outline-danger btn-sm">
                         <i class="bi bi-file-earmark-pdf me-1"></i>Lihat / Download Proposal PDF

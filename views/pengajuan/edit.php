@@ -67,8 +67,40 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                         <div class="form-text" id="deskripsi_counter"></div>
                     </div>
 
+                    <!-- Usulan Pembimbing -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="pembimbing_1_id" class="form-label">Usulan Pembimbing Utama</label>
+                            <select class="form-select" id="pembimbing_1_id" name="pembimbing_1_id">
+                                <option value="">-- Pilih Pembimbing 1 --</option>
+                                <?php foreach ($listDosen as $d): ?>
+                                <option value="<?= $d['id'] ?>" <?= $pengajuan['pembimbing_1_id'] == $d['id'] ? 'selected' : '' ?>>
+                                    <?= e($d['nama']) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="pembimbing_2_id" class="form-label">Usulan Pembimbing Pendamping</label>
+                            <select class="form-select" id="pembimbing_2_id" name="pembimbing_2_id">
+                                <option value="">-- Pilih Pembimbing 2 --</option>
+                                <?php foreach ($listDosen as $d): ?>
+                                <option value="<?= $d['id'] ?>" <?= $pengajuan['pembimbing_2_id'] == $d['id'] ? 'selected' : '' ?>>
+                                    <?= e($d['nama']) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="form-text text-info">
+                                <i class="bi bi-info-circle me-1"></i> 
+                                Dosen dengan jabatan <strong>Asisten Ahli</strong> hanya dapat menjadi Pembimbing 2.
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="mb-4">
-                        <label class="form-label">File Proposal (PDF)</label>
+                        <label class="form-label">File Ringkasan Proposal (PDF)</label>
                         <?php if ($pengajuan['file_proposal']): ?>
                         <div class="d-flex align-items-center gap-2 p-3 rounded-3 mb-2"
                              style="background:#f5f3ff;border:1px solid #ede9fe">

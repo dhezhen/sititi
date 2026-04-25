@@ -17,9 +17,10 @@ class Dosen {
      */
     public function getAll(bool $activeOnly = false, string $search = '', int $page = 1, int $perPage = 15): array {
         $offset = ($page - 1) * $perPage;
-        $sql    = "SELECT d.*, p.nama AS nama_prodi
+        $sql    = "SELECT d.*, p.nama AS nama_prodi, u.role AS user_role
                    FROM dosen d
                    LEFT JOIN prodi p ON p.id = d.prodi_id
+                   LEFT JOIN users u ON u.email = d.email
                    WHERE 1=1";
         $params = [];
 
@@ -41,28 +42,35 @@ class Dosen {
     /**
      * Ambil dosen aktif untuk pilihan pembimbing (tanpa pagination)
      */
-    public function getActiveList(): array {
-        $stmt = $this->db->prepare(
-            "SELECT id, nama, nidn, bidang_keahlian 
-             FROM dosen WHERE is_active = 1 ORDER BY nama ASC"
-        );
-        $stmt->execute();
+    public function getActiveList(?int $angkatan = null): array {
+        $params = [];
+        $sql = "SELECT id, nama, nidn, bidang_keahlian, jabatan_akademik";
+        if ($angkatan) {
+            $sql .= ", (SELECT COUNT(*) FROM pembimbing pb 
+                        JOIN pengajuan_judul pj ON pj.id = pb.pengajuan_id 
+                        JOIN mahasiswa m ON m.user_id = pj.mahasiswa_id 
+                        WHERE pb.dosen_id = dosen.id AND m.angkatan = ?) as workload";
+            $params[] = $angkatan;
+        }
+        $sql .= " FROM dosen WHERE is_active = 1 ORDER BY nama ASC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return $stmt->fetchAll();
     }
 
     public function getJabatanAkademikOptions(): array {
         return [
+            'Asisten Ahli' => 'Asisten Ahli',
             'Lektor' => 'Lektor',
             'Lektor Kepala' => 'Lektor Kepala',
-            'Asisten Ahli' => 'Asisten Ahli',
-            'Profesor' => 'Profesor',
-            'Guru Besar' => 'Guru Besar'
+            'Guru Besar (professor)' => 'Guru Besar (Professor)'
         ];
     }
     public function getBidangKeahlianOptions(): array { 
         return [
             'Pemrograman Web' => 'Pemrograman Web',
-            'Database'        => 'Database',
+            'Data Sains'        => 'Data Sains',
             'Pemrograman Mobile' => 'Pemrograman Mobile',
             'Jaringan Komputer' => 'Jaringan Komputer',
             'Kecerdasan Buatan' => 'Kecerdasan Buatan',
@@ -70,6 +78,14 @@ class Dosen {
             'Computer Vision'  => 'Computer Vision',
             'Analisis Data'     => 'Analisis Data',
             'Cyber Security' => 'Cyber Security',
+            'rekayasa Perangkat Lunak' => 'Rekayasa Perangkat Lunak',
+            'Keamanan Sistem' => 'Keamanan Sistem',
+            'augmented Reality' => 'Augmented Reality',
+            'cloud computing' => 'Cloud Computing',
+            'machine learning' => 'Machine Learning',
+            'Virtual Reality' => 'Virtual Reality',
+            'Internet of Things' => 'Internet of Things',
+            'Lainnya' => 'Lainnya'
         ];
     }
 
@@ -145,6 +161,48 @@ class Dosen {
             $data['is_active']       ?? 1,
             $id,
         ]);
+    }
+
+    /**
+     * Ambil jumlah bimbingan dosen per angkatan
+     */
+    public function getWorkloadByAngkatan(int $dosenId): array {
+        $sql = "SELECT m.angkatan, COUNT(*) as total
+                FROM pembimbing p
+                JOIN pengajuan_judul pj ON pj.id = p.pengajuan_id
+                JOIN mahasiswa m ON m.user_id = pj.mahasiswa_id
+                WHERE p.dosen_id = ?
+                GROUP BY m.angkatan
+                ORDER BY m.angkatan DESC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([$dosenId]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Ambil beban kerja seluruh dosen
+     */
+    public function getAllWorkload(?int $prodiId = null): array {
+        $sql = "SELECT d.id, d.nama, d.nidn, d.jabatan_akademik,
+                       m.angkatan, COUNT(pb.id) as total
+                FROM dosen d
+                LEFT JOIN pembimbing pb ON pb.dosen_id = d.id
+                LEFT JOIN pengajuan_judul pj ON pj.id = pb.pengajuan_id
+                LEFT JOIN mahasiswa m ON m.user_id = pj.mahasiswa_id
+                WHERE d.is_active = 1";
+        
+        $params = [];
+        if ($prodiId) {
+            $sql .= " AND d.prodi_id = ?";
+            $params[] = $prodiId;
+        }
+        
+        $sql .= " GROUP BY d.id, m.angkatan
+                  ORDER BY d.nama ASC, m.angkatan DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

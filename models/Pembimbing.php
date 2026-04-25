@@ -61,8 +61,6 @@ class Pembimbing {
 
             // Pembimbing 2 (opsional)
             if ($dosen2Id) {
-                $stmt->execute([$pengajuanId, $dosen2Id]);
-                // Override karena urutan berbeda
                 $stmt2 = $this->db->prepare(
                     "INSERT INTO pembimbing (pengajuan_id, dosen_id, urutan, assigned_at)
                      VALUES (?, ?, 2, NOW())"

@@ -80,6 +80,75 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
+<!-- Monitoring Beban Dosen -->
+<div class="card mb-4">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <span class="fw-bold"><i class="bi bi-people-fill me-2 text-primary"></i>Monitoring Beban Bimbingan Dosen</span>
+        <span class="badge bg-light text-dark border">Limit: <?= MAX_PEMBIMBING_PER_ANGKATAN ?> Mhs / Angkatan</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4">Dosen</th>
+                        <th>Beban per Angkatan (Progress)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php 
+                    $groupedWorkload = [];
+                    foreach ($dosenWorkload as $dw) {
+                        $groupedWorkload[$dw['id']]['nama'] = $dw['nama'];
+                        $groupedWorkload[$dw['id']]['nidn'] = $dw['nidn'];
+                        if ($dw['angkatan']) {
+                            $groupedWorkload[$dw['id']]['loads'][$dw['angkatan']] = $dw['total'];
+                        }
+                    }
+                    if (empty($groupedWorkload)): ?>
+                    <tr><td colspan="2" class="text-center py-4 text-muted">Belum ada data dosen.</td></tr>
+                    <?php else: ?>
+                    <?php foreach ($groupedWorkload as $id => $d): ?>
+                    <tr>
+                        <td class="ps-4" style="width: 280px;">
+                            <div class="fw-bold"><?= e($d['nama']) ?></div>
+                            <div class="small text-muted">NIDN: <?= e($d['nidn']) ?></div>
+                        </td>
+                        <td>
+                            <div class="d-flex flex-wrap gap-2 py-1">
+                                <?php if (empty($d['loads'])): ?>
+                                    <span class="text-muted small italic">Belum ada bimbingan aktif</span>
+                                <?php else: ?>
+                                    <?php 
+                                    ksort($d['loads']); // Urutkan angkatan
+                                    foreach ($d['loads'] as $angkatan => $total): 
+                                        $percent = ($total / MAX_PEMBIMBING_PER_ANGKATAN) * 100;
+                                        $bg = 'bg-primary';
+                                        if ($percent >= 90) $bg = 'bg-danger';
+                                        elseif ($percent >= 70) $bg = 'bg-warning';
+                                    ?>
+                                    <div class="p-2 border rounded bg-white shadow-sm" style="min-width: 110px;">
+                                        <div class="d-flex justify-content-between mb-1" style="font-size: 0.7rem;">
+                                            <span class="fw-bold text-muted"><?= $angkatan ?></span>
+                                            <span class="fw-bold <?= $percent >= 90 ? 'text-danger' : '' ?>"><?= $total ?>/<?= MAX_PEMBIMBING_PER_ANGKATAN ?></span>
+                                        </div>
+                                        <div class="progress" style="height: 4px;">
+                                            <div class="progress-bar <?= $bg ?>" style="width: <?= $percent ?>%"></div>
+                                        </div>
+                                    </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card">

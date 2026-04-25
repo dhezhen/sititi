@@ -49,6 +49,9 @@ class PengajuanController {
         $stmt    = $db->prepare("SELECT * FROM periode WHERE is_active = 1 LIMIT 1");
         $stmt->execute();
         $periode = $stmt->fetch();
+        
+        $dosenModel = new Dosen();
+        $listDosen  = $dosenModel->getActiveList();
 
         require BASE_PATH . '/views/pengajuan/create.php';
     }
@@ -74,6 +77,8 @@ class PengajuanController {
         $desk   = trim(post('deskripsi'));
         $bidang = trim(post('bidang'));
         $perIdx = post('periode_id');
+        $p1     = post('pembimbing_1_id') ? (int)post('pembimbing_1_id') : null;
+        $p2     = post('pembimbing_2_id') ? (int)post('pembimbing_2_id') : null;
         $errors = [];
 
         // Validasi
@@ -98,6 +103,18 @@ class PengajuanController {
             }
         }
 
+        // Validasi Asisten Ahli
+        $dosenModel = new Dosen();
+        if ($p1) {
+            $d1 = $dosenModel->findById($p1);
+            if ($d1 && $d1['jabatan_akademik'] === 'Asisten Ahli') {
+                $errors[] = 'Dosen dengan jabatan Asisten Ahli tidak dapat menjadi Pembimbing 1.';
+            }
+        }
+        if ($p1 && $p2 && $p1 === $p2) {
+            $errors[] = 'Pembimbing 1 dan 2 tidak boleh orang yang sama.';
+        }
+
         if (!empty($errors)) {
             setFlash('danger', implode('<br>', $errors));
             redirect('?page=pengajuan.create');
@@ -110,6 +127,8 @@ class PengajuanController {
             'deskripsi'     => $desk,
             'bidang'        => $bidang,
             'file_proposal' => $filename,
+            'pembimbing_1_id' => $p1,
+            'pembimbing_2_id' => $p2,
         ]);
 
         // Log
@@ -169,6 +188,9 @@ class PengajuanController {
         $stmt->execute();
         $periode = $stmt->fetch();
 
+        $dosenModel = new Dosen();
+        $listDosen  = $dosenModel->getActiveList();
+
         require BASE_PATH . '/views/pengajuan/edit.php';
     }
 
@@ -197,6 +219,8 @@ class PengajuanController {
         $judul  = trim(post('judul'));
         $desk   = trim(post('deskripsi'));
         $bidang = trim(post('bidang'));
+        $p1     = post('pembimbing_1_id') ? (int)post('pembimbing_1_id') : null;
+        $p2     = post('pembimbing_2_id') ? (int)post('pembimbing_2_id') : null;
         $errors = [];
 
         if (empty($judul) || mb_strlen($judul) < 10) {
@@ -223,6 +247,18 @@ class PengajuanController {
             }
         }
 
+        // Validasi Asisten Ahli
+        $dosenModel = new Dosen();
+        if ($p1) {
+            $d1 = $dosenModel->findById($p1);
+            if ($d1 && $d1['jabatan_akademik'] === 'Asisten Ahli') {
+                $errors[] = 'Dosen dengan jabatan Asisten Ahli tidak dapat menjadi Pembimbing 1.';
+            }
+        }
+        if ($p1 && $p2 && $p1 === $p2) {
+            $errors[] = 'Pembimbing 1 dan 2 tidak boleh orang yang sama.';
+        }
+
         if (!empty($errors)) {
             setFlash('danger', implode('<br>', $errors));
             redirect('?page=pengajuan.edit&id=' . $id);
@@ -233,6 +269,8 @@ class PengajuanController {
             'deskripsi'     => $desk,
             'bidang'        => $bidang,
             'file_proposal' => $filename,
+            'pembimbing_1_id' => $p1,
+            'pembimbing_2_id' => $p2,
         ]);
 
         $this->logModel->add($id, $pengajuan['status'], $pengajuan['status'],

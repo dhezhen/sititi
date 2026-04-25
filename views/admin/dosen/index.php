@@ -42,6 +42,7 @@ require BASE_PATH . '/views/layouts/header.php';
                     <th>Program Studi</th>
                     <th>Bidang Keahlian</th>
                     <th>Status</th>
+                    <th>Role</th>
                     <th style="width:110px">Aksi</th>
                 </tr>
             </thead>
@@ -69,6 +70,9 @@ require BASE_PATH . '/views/layouts/header.php';
                         <?php else: ?>
                             <span class="badge bg-danger">Nonaktif</span>
                         <?php endif; ?>
+                    </td>
+                    <td>
+                        <span class="badge border text-dark bg-light"><?= e(ucfirst($r['user_role'] ?? 'No Acc')) ?></span>
                     </td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal<?= $r['id'] ?>" title="Edit Data">
@@ -150,6 +154,15 @@ require BASE_PATH . '/views/layouts/header.php';
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Role User <span class="text-danger">*</span></label>
+                                    <select name="role" class="form-select" required>
+                                        <option value="dosen" <?= $r['user_role'] === 'dosen' ? 'selected' : '' ?>>Dosen (Pembimbing)</option>
+                                        <option value="dewan" <?= $r['user_role'] === 'dewan' ? 'selected' : '' ?>>Dewan (Reviewer)</option>
+                                        <option value="kaprodi" <?= $r['user_role'] === 'kaprodi' ? 'selected' : '' ?>>Kaprodi</option>
+                                        <option value="staff" <?= $r['user_role'] === 'staff' ? 'selected' : '' ?>>Staff</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -193,16 +206,21 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
         <div class="modal-body">
             <div class="alert alert-info small">
-                <i class="bi bi-info-circle me-1"></i> Upload banyak data dosen sekaligus menggunakan file CSV.
+                <i class="bi bi-info-circle me-1"></i> Upload banyak data dosen sekaligus menggunakan file **Excel (.xlsx)** atau **CSV**. 
+                <strong>Format:</strong> nama, email, nidn, kode_prodi, bidang_keahlian, no_hp, jabatan_akademik, pendidikan, role, password.
+                <br><small>*Jika password dikosongkan, otomatis menggunakan NIDN.</small>
             </div>
             <div class="mb-3">
+                <a href="<?= APP_URL ?>/assets/templates/template_dosen.xlsx" class="btn btn-outline-success btn-sm me-2" download>
+                    <i class="bi bi-file-earmark-excel me-1"></i> Download Template Excel (.xlsx)
+                </a>
                 <a href="<?= APP_URL ?>/assets/templates/template_dosen.csv" class="btn btn-outline-secondary btn-sm" download>
-                    <i class="bi bi-download me-1"></i> Download Template CSV
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download Template CSV
                 </a>
             </div>
             <div class="mb-3">
-                <label for="file_csv_dosen" class="form-label fw-bold">Upload File CSV</label>
-                <input class="form-control" type="file" id="file_csv_dosen" name="file_csv" accept=".csv" required>
+                <label for="file_csv_dosen" class="form-label fw-bold">Upload File Excel/CSV</label>
+                <input class="form-control" type="file" id="file_csv_dosen" name="file_csv" accept=".csv, .xlsx, .xls" required>
             </div>
         </div>
         <div class="modal-footer d-flex justify-content-between">
@@ -280,6 +298,18 @@ require BASE_PATH . '/views/layouts/header.php';
                         <option value="<?= $prodi['id'] ?>"><?= e($prodi['nama']) ?> (<?= e($prodi['kode']) ?>)</option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Role User <span class="text-danger">*</span></label>
+                    <select name="role" class="form-select" required>
+                        <option value="dosen" selected>Dosen (Pembimbing saja)</option>
+                        <option value="dewan">Dewan (Reviewer Proposal)</option>
+                        <option value="kaprodi">Kaprodi</option>
+                        <option value="staff">Staff</option>
+                    </select>
+                    <div class="form-text small text-info">
+                        <i class="bi bi-info-circle me-1"></i> Default adalah Dosen.
+                    </div>
                 </div>
             </div>
         </div>

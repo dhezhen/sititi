@@ -35,6 +35,8 @@ class KaprodiController {
         $pengajuan = $this->pengajuanModel->findById($id);
         if (!$pengajuan) { setFlash('danger', 'Pengajuan tidak ditemukan.'); redirect('?page=kaprodi'); }
         $logs = (new StatusLog())->getByPengajuanId($id);
+        $dosenModel = new Dosen();
+        $listDosen  = $dosenModel->getActiveList();
         require BASE_PATH . '/views/kaprodi/review.php';
     }
 
@@ -46,6 +48,8 @@ class KaprodiController {
         $id        = (int)post('pengajuan_id');
         $aksi      = post('aksi');
         $catatan   = trim(post('catatan'));
+        $p1        = post('pembimbing_1_id') ? (int)post('pembimbing_1_id') : null;
+        $p2        = post('pembimbing_2_id') ? (int)post('pembimbing_2_id') : null;
         $pengajuan = $this->pengajuanModel->findById($id);
         if (!$pengajuan) { setFlash('danger', 'Tidak ditemukan.'); redirect('?page=kaprodi'); }
 
@@ -54,10 +58,49 @@ class KaprodiController {
         }
 
         if ($aksi === 'setujui') {
-            $this->pengajuanModel->updateStatus($id, STATUS_DISETUJUI, $catatan);
-            $this->logModel->add($id, $pengajuan['status'], STATUS_DISETUJUI, Auth::id(), $catatan ?: 'Disetujui.');
-            $this->notifModel->sendToRole(ROLE_DEWAN, "Pengajuan '{$pengajuan['judul']}' disetujui. Tentukan pembimbing.", $id);
-            $this->notifModel->send($pengajuan['user_id'], "Judul skripsi Anda disetujui Kaprodi!", $id);
+            if (!$p1) {
+                setFlash('danger', 'Pembimbing 1 wajib ditentukan.');
+                redirect('?page=kaprodi.review&id=' . $id);
+            }
+
+            // Validasi Asisten Ahli
+            $dosenModel = new Dosen();
+            if ($p1) {
+                $d1 = $dosenModel->findById($p1);
+                if ($d1 && $d1['jabatan_akademik'] === 'Asisten Ahli') {
+                    setFlash('danger', 'Dosen dengan jabatan Asisten Ahli tidak dapat menjadi Pembimbing 1.');
+                    redirect('?page=kaprodi.review&id=' . $id);
+                }
+            }
+
+            // Update proposed advisors in pengajuan_judul table first
+            $this->pengajuanModel->update($id, [
+                'judul'         => $pengajuan['judul'],
+                'deskripsi'     => $pengajuan['deskripsi'],
+                'bidang'        => $pengajuan['bidang'],
+                'pembimbing_1_id' => $p1,
+                'pembimbing_2_id' => $p2,
+            ]);
+
+            // Finalize to pembimbing table is NO LONGER done by Kaprodi here
+            // But we keep the update to the proposal advisors
+            $this->pengajuanModel->update($id, [
+                'judul'         => $pengajuan['judul'],
+                'deskripsi'     => $pengajuan['deskripsi'],
+                'bidang'        => $pengajuan['bidang'],
+                'pembimbing_1_id' => $p1,
+                'pembimbing_2_id' => $p2,
+            ]);
+
+            $this->pengajuanModel->updateStatus($id, STATUS_DISETUJUI, $catatan ?: 'Disetujui Kaprodi, menunggu review proposal oleh Dewan.');
+            $this->logModel->add($id, $pengajuan['status'], STATUS_DISETUJUI, Auth::id(), $catatan ?: 'Disetujui Kaprodi.');
+            
+            // Notif to Dewan
+            $this->notifModel->sendToRole(ROLE_DEWAN, "Pengajuan '{$pengajuan['judul']}' disetujui Kaprodi. Silakan review ringkasan proposal.", $id);
+            
+            // Notif to Mahasiswa
+            $this->notifModel->send($pengajuan['user_id'], "Judul skripsi Anda disetujui Kaprodi dan sedang direview oleh Dewan Bimbingan Skripsi.", $id);
+            
             setFlash('success', 'Pengajuan disetujui dan diteruskan ke Dewan Bimbingan.');
 
         } elseif ($aksi === 'tolak') {

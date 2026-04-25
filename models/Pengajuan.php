@@ -21,12 +21,16 @@ class Pengajuan {
                     u.nama AS nama_mahasiswa, u.email AS email_mahasiswa,
                     m.nim, m.angkatan, m.semester,
                     pr.nama AS nama_prodi,
-                    per.nama AS nama_periode
+                    per.nama AS nama_periode,
+                    d1.nama AS nama_pembimbing_1,
+                    d2.nama AS nama_pembimbing_2
              FROM pengajuan_judul pj
              JOIN users u   ON u.id = pj.user_id
              JOIN mahasiswa m ON m.user_id = pj.user_id
              LEFT JOIN prodi pr    ON pr.id = m.prodi_id
              LEFT JOIN periode per ON per.id = pj.periode_id
+             LEFT JOIN dosen d1    ON d1.id = pj.pembimbing_1_id
+             LEFT JOIN dosen d2    ON d2.id = pj.pembimbing_2_id
              WHERE pj.id = ? LIMIT 1"
         );
         $stmt->execute([$id]);
@@ -138,8 +142,8 @@ class Pengajuan {
     public function create(array $data): int {
         $stmt = $this->db->prepare(
             "INSERT INTO pengajuan_judul
-             (user_id, periode_id, judul, deskripsi, bidang, file_proposal, status, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, 'draft', NOW(), NOW())"
+             (user_id, periode_id, judul, deskripsi, bidang, file_proposal, pembimbing_1_id, pembimbing_2_id, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'draft', NOW(), NOW())"
         );
         $stmt->execute([
             $data['user_id'],
@@ -148,6 +152,8 @@ class Pengajuan {
             $data['deskripsi']      ?? null,
             $data['bidang']         ?? null,
             $data['file_proposal']  ?? null,
+            $data['pembimbing_1_id'] ?? null,
+            $data['pembimbing_2_id'] ?? null,
         ]);
         return (int)$this->db->lastInsertId();
     }
@@ -156,8 +162,8 @@ class Pengajuan {
      * Update pengajuan (hanya bisa jika status draft/revisi)
      */
     public function update(int $id, array $data): bool {
-        $fields = ['judul=?', 'deskripsi=?', 'bidang=?', 'updated_at=NOW()'];
-        $params = [$data['judul'], $data['deskripsi'], $data['bidang']];
+        $fields = ['judul=?', 'deskripsi=?', 'bidang=?', 'pembimbing_1_id=?', 'pembimbing_2_id=?', 'updated_at=NOW()'];
+        $params = [$data['judul'], $data['deskripsi'], $data['bidang'], $data['pembimbing_1_id'] ?? null, $data['pembimbing_2_id'] ?? null];
 
         if (!empty($data['file_proposal'])) {
             $fields[] = 'file_proposal=?';

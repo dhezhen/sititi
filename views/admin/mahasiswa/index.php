@@ -177,17 +177,20 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
         <div class="modal-body">
             <div class="alert alert-info small">
-                <i class="bi bi-info-circle me-1"></i> Anda dapat mengupload banyak data mahasiswa sekaligus menggunakan file CSV. 
+                <i class="bi bi-info-circle me-1"></i> Upload banyak data mahasiswa sekaligus menggunakan file **Excel (.xlsx)** atau **CSV**. 
                 Pastikan format sesuai dengan template yang disediakan.
             </div>
             <div class="mb-3">
+                <a href="<?= APP_URL ?>/assets/templates/template_mahasiswa.xlsx" class="btn btn-outline-success btn-sm me-2" download>
+                    <i class="bi bi-file-earmark-excel me-1"></i> Download Template Excel (.xlsx)
+                </a>
                 <a href="<?= APP_URL ?>/assets/templates/template_mahasiswa.csv" class="btn btn-outline-secondary btn-sm" download>
-                    <i class="bi bi-download me-1"></i> Download Template CSV
+                    <i class="bi bi-file-earmark-spreadsheet me-1"></i> Download Template CSV
                 </a>
             </div>
             <div class="mb-3">
-                <label for="file_csv" class="form-label fw-bold">Upload File CSV</label>
-                <input class="form-control" type="file" id="file_csv" name="file_csv" accept=".csv" required>
+                <label for="file_csv" class="form-label fw-bold">Upload File Excel/CSV</label>
+                <input class="form-control" type="file" id="file_csv" name="file_csv" accept=".csv, .xlsx, .xls" required>
             </div>
         </div>
         <div class="modal-footer d-flex justify-content-between">

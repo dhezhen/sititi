@@ -4,6 +4,8 @@
  * File: controllers/AdminController.php
  */
 
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
 class AdminController {
 
     private Mahasiswa $mhsModel;
@@ -16,6 +18,108 @@ class AdminController {
         $this->dosenModel   = new Dosen();
         $this->userModel    = new User();
         $this->periodeModel = new Periode();
+    }
+
+    // ── STAFF MANAGEMENT ──────────────────────────────────────────
+
+    public function staff(): void {
+        Auth::requireRole(ROLE_SUPERADMIN); // Hanya superadmin yang boleh kelola staff
+        
+        $search  = trim(get('search'));
+        $page    = max(1, (int)get('p', 1));
+        $perPage = 15;
+        $offset  = ($page - 1) * $perPage;
+
+        $db = getDB();
+        $where = "role = 'staff'";
+        $params = [];
+        if ($search) {
+            $where .= " AND (nama LIKE ? OR email LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+
+        $stmt = $db->prepare("SELECT * FROM users WHERE $where ORDER BY nama ASC LIMIT $perPage OFFSET $offset");
+        $stmt->execute($params);
+        $list = $stmt->fetchAll();
+
+        $stmtCount = $db->prepare("SELECT COUNT(*) FROM users WHERE $where");
+        $stmtCount->execute($params);
+        $total = $stmtCount->fetchColumn();
+        $pages = ceil($total / $perPage);
+
+        require BASE_PATH . '/views/admin/staff/index.php';
+    }
+
+    public function staffStore(): void {
+        Auth::requireRole(ROLE_SUPERADMIN);
+        if (!isPost()) redirect('?page=admin.staff');
+        verifyCsrf();
+
+        $nama     = trim(post('nama'));
+        $email    = trim(post('email'));
+        $password = post('password');
+
+        if (empty($nama) || empty($email) || empty($password)) {
+            setFlash('danger', 'Semua field wajib diisi.');
+            redirect('?page=admin.staff');
+        }
+
+        if ($this->userModel->emailExists($email)) {
+            setFlash('danger', 'Email sudah terdaftar.');
+            redirect('?page=admin.staff');
+        }
+
+        $this->userModel->create([
+            'nama'     => $nama,
+            'email'    => $email,
+            'password' => $password,
+            'role'     => ROLE_STAFF
+        ]);
+
+        setFlash('success', 'Staff berhasil ditambahkan.');
+        redirect('?page=admin.staff');
+    }
+
+    public function staffUpdate(): void {
+        Auth::requireRole(ROLE_SUPERADMIN);
+        if (!isPost()) redirect('?page=admin.staff');
+        verifyCsrf();
+
+        $id       = (int)post('id');
+        $nama     = trim(post('nama'));
+        $email    = trim(post('email'));
+        $password = post('password');
+        $active   = (int)post('is_active');
+
+        if ($this->userModel->emailExists($email, $id)) {
+            setFlash('danger', 'Email sudah terdaftar pada user lain.');
+            redirect('?page=admin.staff');
+        }
+
+        $data = [
+            'nama'      => $nama,
+            'email'     => $email,
+            'is_active' => $active
+        ];
+        if (!empty($password)) {
+            $data['password'] = $password;
+        }
+
+        $this->userModel->update($id, $data);
+
+        setFlash('success', 'Data staff berhasil diperbarui.');
+        redirect('?page=admin.staff');
+    }
+
+    public function staffDelete(): void {
+        Auth::requireRole(ROLE_SUPERADMIN);
+        $id = (int)get('id');
+        if ($id) {
+            $this->userModel->delete($id);
+            setFlash('success', 'Staff berhasil dihapus.');
+        }
+        redirect('?page=admin.staff');
     }
 
     // ── MAHASISWA ───────────────────────────────────────────────────
@@ -214,7 +318,7 @@ class AdminController {
         verifyCsrf();
 
         if (empty($_FILES['file_csv']['name'])) {
-            setFlash('danger', 'Pilih file CSV terlebih dahulu.');
+            setFlash('danger', 'Pilih file Excel/CSV terlebih dahulu.');
             redirect('?page=admin.mahasiswa');
         }
 
@@ -224,81 +328,90 @@ class AdminController {
             redirect('?page=admin.mahasiswa');
         }
 
-        $handle = fopen($file, 'r');
-        $header = fgetcsv($handle); // Baca header
-        
-        $success = 0;
-        $failed  = 0;
-        $db = getDB();
+        try {
+            $spreadsheet = IOFactory::load($file);
+            $worksheet   = $spreadsheet->getActiveSheet();
+            $rows        = $worksheet->toArray();
+            
+            // Hapus header
+            array_shift($rows);
+            
+            $success = 0;
+            $failed  = 0;
+            $db = getDB();
 
-        while (($row = fgetcsv($handle)) !== false) {
-            if (count($row) < 3) continue; // Skip baris kosong
+            foreach ($rows as $row) {
+                if (empty($row[0]) || empty($row[2])) continue; // Skip jika Nama atau NIM kosong
 
-            $nama     = trim($row[0] ?? '');
-            $email    = trim($row[1] ?? '');
-            $nim      = trim($row[2] ?? '');
-            $angkatan = trim($row[3] ?? '');
-            $semester = trim($row[4] ?? '');
-            $kd_prodi = trim($row[5] ?? '');
-            $no_hp    = trim($row[6] ?? '');
-            $alamat   = trim($row[7] ?? '');
+                $nama     = trim($row[0] ?? '');
+                $email    = trim($row[1] ?? '');
+                $nim      = trim($row[2] ?? '');
+                $angkatan = trim($row[3] ?? '');
+                $semester = trim($row[4] ?? '');
+                $kd_prodi = trim($row[5] ?? '');
+                $no_hp    = trim($row[6] ?? '');
+                $alamat   = trim($row[7] ?? '');
 
-            if (empty($nama) || empty($email) || empty($nim)) {
-                $failed++;
-                continue;
+                if (empty($nama) || empty($email) || empty($nim)) {
+                    $failed++;
+                    continue;
+                }
+
+                if (!empty($email) && !str_ends_with($email, '@uniku.ac.id')) {
+                    $failed++;
+                    continue;
+                }
+
+                // Cari ID Prodi berdasarkan kode
+                $prodiId = null;
+                if ($kd_prodi) {
+                    $stmt = $db->prepare("SELECT id FROM prodi WHERE kode = ? LIMIT 1");
+                    $stmt->execute([$kd_prodi]);
+                    $prodiId = $stmt->fetchColumn();
+                }
+
+                // Cek NIM duplikat
+                $stmt = $db->prepare("SELECT id FROM mahasiswa WHERE nim = ?");
+                $stmt->execute([$nim]);
+                if ($stmt->fetchColumn()) {
+                    $failed++;
+                    continue;
+                }
+
+                try {
+                    $db->beginTransaction();
+
+                    // Buat User (Default password: nim)
+                    $userId = $this->userModel->create([
+                        'nama'     => $nama,
+                        'email'    => $email,
+                        'password' => $nim,
+                        'role'     => ROLE_MAHASISWA
+                    ]);
+
+                    $this->mhsModel->create([
+                        'user_id'  => $userId,
+                        'nim'      => $nim,
+                        'angkatan' => $angkatan ?: date('Y'),
+                        'semester' => $semester ?: 1,
+                        'prodi_id' => $prodiId,
+                        'no_hp'    => $no_hp,
+                        'alamat'   => $alamat
+                    ]);
+
+                    $db->commit();
+                    $success++;
+                } catch (Exception $e) {
+                    $db->rollBack();
+                    $failed++;
+                }
             }
 
-            if (!str_ends_with($email, '@uniku.ac.id')) {
-                $failed++;
-                continue;
-            }
-
-            // Cek apakah email sudah ada
-            if ($this->userModel->emailExists($email)) {
-                $failed++;
-                continue;
-            }
-
-            // Cari ID Prodi berdasarkan kode
-            $prodiId = null;
-            if ($kd_prodi) {
-                $stmt = $db->prepare("SELECT id FROM prodi WHERE kode = ? LIMIT 1");
-                $stmt->execute([$kd_prodi]);
-                $prodiId = $stmt->fetchColumn();
-            }
-
-            try {
-                $db->beginTransaction();
-                
-                // Buat User
-                $userId = $this->userModel->create([
-                    'nama'     => $nama,
-                    'email'    => $email,
-                    'password' => 'password', // Default password
-                    'role'     => ROLE_MAHASISWA
-                ]);
-
-                // Buat Profil Mahasiswa
-                $this->mhsModel->create([
-                    'user_id'  => $userId,
-                    'nim'      => $nim,
-                    'angkatan' => $angkatan ?: date('Y'),
-                    'semester' => $semester ?: 1,
-                    'prodi_id' => $prodiId ?: null,
-                    'no_hp'    => $no_hp,
-                    'alamat'   => $alamat
-                ]);
-
-                $db->commit();
-                $success++;
-            } catch (Exception $e) {
-                $db->rollBack();
-                $failed++;
-            }
+            setFlash('success', "Import selesai. Berhasil: $success, Gagal: $failed.");
+        } catch (Exception $e) {
+            setFlash('danger', 'Gagal membaca file: ' . $e->getMessage());
         }
-        fclose($handle);
 
-        setFlash('success', "Import selesai. Berhasil: $success, Gagal/Lewati: $failed.");
         redirect('?page=admin.mahasiswa');
     }
 
@@ -317,7 +430,7 @@ class AdminController {
         
         $total = $this->dosenModel->count($search);
         $pages = (int)ceil($total / $perPage);
-        $list  = $this->dosenModel->getAll($search, $page, $perPage);
+        $list  = $this->dosenModel->getAll(false, $search, $page, $perPage);
         $dosenModel = $this->dosenModel; // expose ke view
 
         // Ambil daftar prodi untuk dropdown
@@ -377,7 +490,7 @@ class AdminController {
                 'nama'     => $nama,
                 'email'    => $email,
                 'password' => $password,
-                'role'     => ROLE_DEWAN // Atau buat role DOSEN baru jika diperlukan, tapi defaultnya bisa dewan atau direview saja
+                'role'     => post('role', ROLE_DOSEN)
             ]);
 
             // Karena role dewan sudah ada untuk mengurus pembimbing, kita set ke dewan atau biarkan null (but user table need role).
@@ -464,22 +577,25 @@ class AdminController {
         try {
             $db->beginTransaction();
 
-            if ($userId) {
-                // Update User
-                $userData = ['nama' => $nama, 'email' => $email];
-                if (!empty($password)) {
-                    $userData['password'] = $password;
+                if ($userId) {
+                    // Update User
+                    $userData = ['nama' => $nama, 'email' => $email];
+                    if (!empty($password)) {
+                        $userData['password'] = $password;
+                    }
+                    if (post('role')) {
+                        $userData['role'] = post('role');
+                    }
+                    $this->userModel->update($userId, $userData);
+                } elseif (!empty($password)) {
+                    // Buat user jika belum ada tapi dia masukin password
+                    $this->userModel->create([
+                        'nama'     => $nama,
+                        'email'    => $email,
+                        'password' => $password,
+                        'role'     => post('role', ROLE_DOSEN)
+                    ]);
                 }
-                $this->userModel->update($userId, $userData);
-            } elseif (!empty($password)) {
-                // Buat user jika belum ada tapi dia masukin password
-                $this->userModel->create([
-                    'nama'     => $nama,
-                    'email'    => $email,
-                    'password' => $password,
-                    'role'     => ROLE_DEWAN
-                ]);
-            }
 
             $this->dosenModel->update($id, [
                 'nama'             => $nama,
@@ -540,7 +656,7 @@ class AdminController {
         verifyCsrf();
 
         if (empty($_FILES['file_csv']['name'])) {
-            setFlash('danger', 'Pilih file CSV terlebih dahulu.');
+            setFlash('danger', 'Pilih file Excel/CSV terlebih dahulu.');
             redirect('?page=admin.dosen');
         }
 
@@ -550,66 +666,107 @@ class AdminController {
             redirect('?page=admin.dosen');
         }
 
-        $handle = fopen($file, 'r');
-        $header = fgetcsv($handle);
-        
-        $success = 0;
-        $failed  = 0;
-        $db = getDB();
+        try {
+            $spreadsheet = IOFactory::load($file);
+            $worksheet   = $spreadsheet->getActiveSheet();
+            $rows        = $worksheet->toArray();
+            
+            // Hapus header
+            array_shift($rows);
 
-        while (($row = fgetcsv($handle)) !== false) {
-            if (count($row) < 3) continue;
+            $success = 0;
+            $failed  = 0;
+            $db = getDB();
 
-            $nama     = trim($row[0] ?? '');
-            $email    = trim($row[1] ?? '');
-            $nidn     = trim($row[2] ?? '');
-            $kd_prodi = trim($row[3] ?? '');
-            $bidang   = trim($row[4] ?? '');
-            $no_hp    = trim($row[5] ?? '');
+            foreach ($rows as $row) {
+                if (empty($row[0]) || empty($row[2])) continue;
 
-            if (empty($nama) || empty($nidn)) {
-                $failed++;
-                continue;
+                $nama       = trim($row[0] ?? '');
+                $email      = trim($row[1] ?? '');
+                $nidn       = trim($row[2] ?? '');
+                $kd_prodi   = trim($row[3] ?? '');
+                $bidang     = trim($row[4] ?? '');
+                $no_hp      = trim($row[5] ?? '');
+                $jabatan    = trim($row[6] ?? '');
+                $pendidikan = trim($row[7] ?? '');
+                $role_input = strtolower(trim($row[8] ?? ''));
+                $password_input = trim($row[9] ?? '');
+
+                if (empty($nama) || empty($nidn)) {
+                    $failed++;
+                    continue;
+                }
+
+                if (!empty($email) && !str_ends_with($email, '@uniku.ac.id')) {
+                    $failed++;
+                    continue;
+                }
+
+                // Cari ID Prodi berdasarkan kode
+                $prodiId = null;
+                if ($kd_prodi) {
+                    $stmt = $db->prepare("SELECT id FROM prodi WHERE kode = ? LIMIT 1");
+                    $stmt->execute([$kd_prodi]);
+                    $prodiId = $stmt->fetchColumn();
+                }
+
+                // Cek NIDN duplikat
+                $stmt = $db->prepare("SELECT id FROM dosen WHERE nidn = ?");
+                $stmt->execute([$nidn]);
+                if ($stmt->fetchColumn()) {
+                    $failed++;
+                    continue;
+                }
+
+                try {
+                    $db->beginTransaction();
+
+                    // Create user if email is provided
+                    $userId = null;
+                    if (!empty($email)) {
+                        // Check if user already exists
+                        $stmtUser = $db->prepare("SELECT id FROM users WHERE email = ?");
+                        $stmtUser->execute([$email]);
+                        $userId = $stmtUser->fetchColumn();
+
+                        if (!$userId) {
+                            // Tentukan role: dosen, dewan, kaprodi
+                            $validRoles = [ROLE_DOSEN, ROLE_DEWAN, ROLE_KAPRODI, ROLE_STAFF];
+                            $finalRole = in_array($role_input, $validRoles) ? $role_input : ROLE_DOSEN;
+
+                            $userId = $this->userModel->create([
+                                'nama'     => $nama,
+                                'email'    => $email,
+                                'password' => !empty($password_input) ? $password_input : $nidn, // Gunakan password input atau default NIDN
+                                'role'     => $finalRole
+                            ]);
+                        }
+                    }
+
+                    $this->dosenModel->create([
+                        'nama'            => $nama,
+                        'nidn'            => $nidn,
+                        'email'           => $email,
+                        'prodi_id'        => $prodiId ?: null,
+                        'bidang_keahlian' => $bidang,
+                        'no_hp'           => $no_hp,
+                        'jabatan_akademik' => $jabatan,
+                        'pendidikan'       => $pendidikan
+                    ]);
+                    
+                    $db->commit();
+                    $success++;
+                } catch (Exception $e) {
+                    if ($db->inTransaction()) $db->rollBack();
+                    $failed++;
+                }
             }
 
-            if (!empty($email) && !str_ends_with($email, '@uniku.ac.id')) {
-                $failed++;
-                continue;
-            }
-
-            // Cari ID Prodi berdasarkan kode
-            $prodiId = null;
-            if ($kd_prodi) {
-                $stmt = $db->prepare("SELECT id FROM prodi WHERE kode = ? LIMIT 1");
-                $stmt->execute([$kd_prodi]);
-                $prodiId = $stmt->fetchColumn();
-            }
-
-            // Cek NIDN duplikat
-            $stmt = $db->prepare("SELECT id FROM dosen WHERE nidn = ?");
-            $stmt->execute([$nidn]);
-            if ($stmt->fetchColumn()) {
-                $failed++;
-                continue;
-            }
-
-            try {
-                $this->dosenModel->create([
-                    'nama'            => $nama,
-                    'nidn'            => $nidn,
-                    'email'           => $email,
-                    'prodi_id'        => $prodiId ?: null,
-                    'bidang_keahlian' => $bidang,
-                    'no_hp'           => $no_hp
-                ]);
-                $success++;
-            } catch (Exception $e) {
-                $failed++;
-            }
+            setFlash('success', "Import selesai. Berhasil: $success, Gagal: $failed.");
+        } catch (Exception $e) {
+            setFlash('danger', 'Gagal membaca file: ' . $e->getMessage());
         }
-        fclose($handle);
 
-        setFlash('success', "Import selesai. Berhasil: $success, Gagal/Lewati: $failed.");
         redirect('?page=admin.dosen');
     }
 

@@ -1,0 +1,6 @@
+{
+    "name": "adehu/sititi",
+    "require": {
+        "phpoffice/phpspreadsheet": "^5.7"
+    }
+}

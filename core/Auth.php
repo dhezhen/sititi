@@ -84,6 +84,10 @@ class Auth {
      */
     public static function hasRole(string|array $roles): bool {
         if (!self::check()) return false;
+        
+        // Superadmin memiliki akses ke semua role
+        if ($_SESSION['user_role'] === ROLE_SUPERADMIN) return true;
+
         $roles = (array)$roles;
         return in_array($_SESSION['user_role'], $roles);
     }

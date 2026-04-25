@@ -85,10 +85,42 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                     </div>
                     <?php endif; ?>
 
+                    <!-- Usulan Pembimbing -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="pembimbing_1_id" class="form-label">Usulan Pembimbing Utama</label>
+                            <select class="form-select" id="pembimbing_1_id" name="pembimbing_1_id">
+                                <option value="">-- Pilih Pembimbing 1 --</option>
+                                <?php foreach ($listDosen as $d): ?>
+                                <option value="<?= $d['id'] ?>" <?= post('pembimbing_1_id') == $d['id'] ? 'selected' : '' ?>>
+                                    <?= e($d['nama']) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="pembimbing_2_id" class="form-label">Usulan Pembimbing Pendamping</label>
+                            <select class="form-select" id="pembimbing_2_id" name="pembimbing_2_id">
+                                <option value="">-- Pilih Pembimbing 2 --</option>
+                                <?php foreach ($listDosen as $d): ?>
+                                <option value="<?= $d['id'] ?>" <?= post('pembimbing_2_id') == $d['id'] ? 'selected' : '' ?>>
+                                    <?= e($d['nama']) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <div class="form-text text-info">
+                                <i class="bi bi-info-circle me-1"></i> 
+                                Dosen dengan jabatan <strong>Asisten Ahli</strong> hanya dapat menjadi Pembimbing 2.
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Upload Proposal -->
                     <div class="mb-4">
                         <label class="form-label">
-                            File Proposal (PDF)
+                            File Ringkasan Proposal (PDF)
                             <span class="text-muted small fw-normal">— opsional saat draft</span>
                         </label>
                         <div class="upload-area" id="uploadArea">
@@ -122,8 +154,8 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                 <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
                     <?php
                     $steps = [
-                        ['Draft', 'secondary'], ['Diajukan', 'info'], ['Diverifikasi', 'primary'],
-                        ['Direview', 'warning'], ['Disetujui', 'success'], ['Pembimbing Ditentukan', 'dark']
+                        ['Draft', 'secondary'], ['Diajukan', 'info'], ['Verifikasi Staff', 'primary'],
+                        ['Review Judul', 'warning'], ['Review Proposal', 'danger'], ['Selesai', 'success']
                     ];
                     foreach ($steps as $i => $s): ?>
                     <span class="badge bg-<?= $s[1] ?> px-3 py-2"><?= $s[0] ?></span>

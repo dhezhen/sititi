@@ -1,6 +1,8 @@
 <?php
 require __DIR__ . '/../config/app.php';
 require __DIR__ . '/../config/database.php';
+
 $db = getDB();
-$stmt = $db->query("SHOW COLUMNS FROM dosen");
-print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
+$dosen = $db->query("SELECT * FROM dosen")->fetchAll(PDO::FETCH_ASSOC);
+echo "Total Dosen: " . count($dosen) . "\n";
+print_r($dosen);
