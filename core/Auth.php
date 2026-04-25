@@ -117,6 +117,13 @@ class Auth {
         // Superadmin bypass
         if (self::role() === ROLE_SUPERADMIN) return true;
 
+        // Halaman yang selalu diizinkan untuk semua role yang sudah login
+        $alwaysAllowed = [
+            'dashboard', 'profil', 'profil.update', 
+            'notif', 'notif.read', 'notif.readall', 'logout'
+        ];
+        if (in_array($page, $alwaysAllowed)) return true;
+
         $db = getDB();
         
         // Cek apakah $page ini ada di tabel menus

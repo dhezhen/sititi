@@ -29,6 +29,57 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
+<!-- Statistik per Angkatan -->
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-graph-up me-2 text-primary"></i>Monitoring Pengajuan Per Angkatan</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sititi mb-0">
+                <thead>
+                    <tr>
+                        <th>Angkatan</th>
+                        <th>Total Mahasiswa</th>
+                        <th>Sudah Mengajukan</th>
+                        <th>Belum Mengajukan</th>
+                        <th>Proses Aktif</th>
+                        <th>Progress</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($angkatanStats)): ?>
+                    <tr><td colspan="6" class="text-center py-4 text-muted small">Belum ada data mahasiswa.</td></tr>
+                    <?php else: ?>
+                    <?php foreach ($angkatanStats as $s): 
+                        $total = $s['total_mahasiswa'];
+                        $sudah = $s['sudah_mengajukan'];
+                        $belum = $total - $sudah;
+                        $persen = $total > 0 ? round(($sudah / $total) * 100) : 0;
+                    ?>
+                    <tr>
+                        <td class="fw-bold">Angkatan <?= $s['angkatan'] ?></td>
+                        <td><?= number_format($total) ?></td>
+                        <td class="text-success fw-bold"><?= number_format($sudah) ?></td>
+                        <td class="text-danger fw-bold"><?= number_format($belum) ?></td>
+                        <td><span class="badge bg-info text-dark"><?= number_format($s['pengajuan_aktif']) ?></span></td>
+                        <td style="width: 150px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 6px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width: <?= $persen ?>%"></div>
+                                </div>
+                                <span class="small fw-bold" style="font-size: 0.75rem;"><?= $persen ?>%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-8">
         <div class="card">

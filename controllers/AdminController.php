@@ -31,6 +31,10 @@ class AdminController {
         $pages = (int)ceil($total / $perPage);
         $list  = $this->mhsModel->getAll($search, $page, $perPage);
 
+        // Ambil daftar prodi untuk dropdown
+        $db = getDB();
+        $prodiList = $db->query("SELECT id, nama, kode FROM prodi ORDER BY nama ASC")->fetchAll(PDO::FETCH_ASSOC);
+
         require BASE_PATH . '/views/admin/mahasiswa/index.php';
     }
 
@@ -45,6 +49,13 @@ class AdminController {
         $password = post('password');
         $nim      = trim(post('nim'));
         $angkatan = trim(post('angkatan'));
+        
+        // Ekstrak angkatan dari NIM (4 digit pertama) jika angkatan kosong
+        if (empty($angkatan) && strlen($nim) >= 4) {
+            $year = substr($nim, 0, 4);
+            if (is_numeric($year)) $angkatan = $year;
+        }
+
         $semester = trim(post('semester'));
         $prodi_id = post('prodi_id');
         $no_hp    = trim(post('no_hp'));
@@ -110,6 +121,13 @@ class AdminController {
         $password = post('password');
         $nim      = trim(post('nim'));
         $angkatan = trim(post('angkatan'));
+
+        // Ekstrak angkatan dari NIM (4 digit pertama) jika angkatan kosong
+        if (empty($angkatan) && strlen($nim) >= 4) {
+            $year = substr($nim, 0, 4);
+            if (is_numeric($year)) $angkatan = $year;
+        }
+
         $semester = trim(post('semester'));
         $prodi_id = post('prodi_id');
         $no_hp    = trim(post('no_hp'));
@@ -289,7 +307,7 @@ class AdminController {
     public function dosen(): void {
         Auth::requireLogin();
         // Hanya Staff, Kaprodi, Dewan yang boleh akses data master dosen
-        if (!in_array(Auth::role(), [ROLE_STAFF, ROLE_KAPRODI, ROLE_DEWAN])) {
+        if (!in_array(Auth::role(), [ROLE_STAFF, ROLE_KAPRODI, ROLE_DEWAN, ROLE_SUPERADMIN])) {
             redirect('?page=403');
         }
 
@@ -300,6 +318,11 @@ class AdminController {
         $total = $this->dosenModel->count($search);
         $pages = (int)ceil($total / $perPage);
         $list  = $this->dosenModel->getAll($search, $page, $perPage);
+        $dosenModel = $this->dosenModel; // expose ke view
+
+        // Ambil daftar prodi untuk dropdown
+        $db = getDB();
+        $prodiList = $db->query("SELECT id, nama, kode FROM prodi ORDER BY nama ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         require BASE_PATH . '/views/admin/dosen/index.php';
     }
@@ -317,6 +340,8 @@ class AdminController {
         $prodi_id = post('prodi_id');
         $bidang   = trim(post('bidang_keahlian'));
         $no_hp    = trim(post('no_hp'));
+        $jabatan  = trim(post('jabatan_akademik'));
+        $pendidikan = trim(post('pendidikan'));
 
         $errors = [];
         if (empty($nama) || empty($email) || empty($password) || empty($nidn)) {
@@ -361,12 +386,14 @@ class AdminController {
             // Let's check `User.php` role enum if it exists. No enum. We'll set role as 'dewan' so they can login. Or just don't create user if not requested? "termasuk password untuk masuk... dosen mahasiswa staff". Let's use 'dewan' for dosen if they don't have a specific role, or let's just make it 'dosen'.
             
             $this->dosenModel->create([
-                'nama'            => $nama,
-                'nidn'            => $nidn,
-                'email'           => $email,
-                'prodi_id'        => $prodi_id ?: null,
-                'bidang_keahlian' => $bidang,
-                'no_hp'           => $no_hp
+                'nama'             => $nama,
+                'nidn'             => $nidn,
+                'email'            => $email,
+                'prodi_id'         => $prodi_id ?: null,
+                'bidang_keahlian'  => $bidang,
+                'no_hp'            => $no_hp,
+                'jabatan_akademik' => $jabatan,
+                'pendidikan'       => $pendidikan
             ]);
 
             $db->commit();
@@ -384,7 +411,7 @@ class AdminController {
         if (!isPost()) redirect('?page=admin.dosen');
         verifyCsrf();
 
-        $id       = (int)post('id');
+        $id         = (int)post('id');
         $nama     = trim(post('nama'));
         $email    = trim(post('email'));
         $password = post('password');
@@ -392,6 +419,8 @@ class AdminController {
         $prodi_id = post('prodi_id');
         $bidang   = trim(post('bidang_keahlian'));
         $no_hp    = trim(post('no_hp'));
+        $jabatan  = trim(post('jabatan_akademik'));
+        $pendidikan = trim(post('pendidikan'));
 
         $dosen = $this->dosenModel->findById($id);
         if (!$dosen) {
@@ -453,12 +482,14 @@ class AdminController {
             }
 
             $this->dosenModel->update($id, [
-                'nama'            => $nama,
-                'nidn'            => $nidn,
-                'email'           => $email,
-                'prodi_id'        => $prodi_id ?: null,
-                'bidang_keahlian' => $bidang,
-                'no_hp'           => $no_hp
+                'nama'             => $nama,
+                'nidn'             => $nidn,
+                'email'            => $email,
+                'prodi_id'         => $prodi_id ?: null,
+                'bidang_keahlian'  => $bidang,
+                'no_hp'            => $no_hp,
+                'jabatan_akademik' => $jabatan,
+                'pendidikan'       => $pendidikan
             ]);
 
             $db->commit();

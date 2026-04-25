@@ -65,6 +65,20 @@ class DashboardController {
         $recent      = $pengajuanModel->getRecent(5, STATUS_DIAJUKAN);
         $notifasi    = (new Notifikasi())->getByUserId(Auth::id(), 5);
 
+        // Statistik Pengajuan per Angkatan
+        $db = getDB();
+        $angkatanStats = $db->query("
+            SELECT 
+                m.angkatan,
+                COUNT(DISTINCT m.id) AS total_mahasiswa,
+                COUNT(DISTINCT p.id) AS sudah_mengajukan,
+                COUNT(DISTINCT CASE WHEN p.status NOT IN ('ditolak', 'draft') THEN p.id END) AS pengajuan_aktif
+            FROM mahasiswa m
+            LEFT JOIN pengajuan_judul p ON m.user_id = p.user_id
+            GROUP BY m.angkatan
+            ORDER BY m.angkatan DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
         require BASE_PATH . '/views/dashboard/staff.php';
     }
 
@@ -80,6 +94,31 @@ class DashboardController {
         $ditolak      = $pengajuanModel->count(['status' => STATUS_DITOLAK]);
         $recent       = $pengajuanModel->getRecent(5, STATUS_DIVERIFIKASI);
         $notifasi     = (new Notifikasi())->getByUserId(Auth::id(), 5);
+
+        // Statistik Pengajuan per Angkatan (Khusus Prodi Kaprodi)
+        $db = getDB();
+        $userEmail = Auth::user()['email'];
+        $stmtK = $db->prepare("SELECT prodi_id FROM dosen WHERE email = ? LIMIT 1");
+        $stmtK->execute([$userEmail]);
+        $prodiId = $stmtK->fetchColumn();
+
+        $angkatanStats = [];
+        if ($prodiId) {
+            $stmtS = $db->prepare("
+                SELECT 
+                    m.angkatan,
+                    COUNT(DISTINCT m.id) AS total_mahasiswa,
+                    COUNT(DISTINCT p.id) AS sudah_mengajukan,
+                    COUNT(DISTINCT CASE WHEN p.status NOT IN ('ditolak', 'draft') THEN p.id END) AS pengajuan_aktif
+                FROM mahasiswa m
+                LEFT JOIN pengajuan_judul p ON m.user_id = p.user_id
+                WHERE m.prodi_id = ?
+                GROUP BY m.angkatan
+                ORDER BY m.angkatan DESC
+            ");
+            $stmtS->execute([$prodiId]);
+            $angkatanStats = $stmtS->fetchAll(PDO::FETCH_ASSOC);
+        }
 
         require BASE_PATH . '/views/dashboard/kaprodi.php';
     }
@@ -109,6 +148,19 @@ class DashboardController {
             'menus' => $db->query("SELECT COUNT(*) FROM menus")->fetchColumn(),
         ];
         
+        // Statistik Pengajuan per Angkatan
+        $angkatanStats = $db->query("
+            SELECT 
+                m.angkatan,
+                COUNT(DISTINCT m.id) AS total_mahasiswa,
+                COUNT(DISTINCT p.id) AS sudah_mengajukan,
+                COUNT(DISTINCT CASE WHEN p.status NOT IN ('ditolak', 'draft') THEN p.id END) AS pengajuan_aktif
+            FROM mahasiswa m
+            LEFT JOIN pengajuan_judul p ON m.user_id = p.user_id
+            GROUP BY m.angkatan
+            ORDER BY m.angkatan DESC
+        ")->fetchAll(PDO::FETCH_ASSOC);
+
         $notifasi = (new Notifikasi())->getByUserId(Auth::id(), 5);
         require BASE_PATH . '/views/dashboard/superadmin.php';
     }

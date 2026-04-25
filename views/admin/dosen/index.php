@@ -42,12 +42,13 @@ require BASE_PATH . '/views/layouts/header.php';
                     <th>Program Studi</th>
                     <th>Bidang Keahlian</th>
                     <th>Status</th>
+                    <th style="width:110px">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 <?php if (empty($list)): ?>
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">Belum ada data dosen.</td>
+                    <td colspan="7" class="text-center py-4 text-muted">Belum ada data dosen.</td>
                 </tr>
                 <?php else: ?>
                 <?php $no = ($page - 1) * $perPage + 1; foreach ($list as $r): ?>
@@ -69,7 +70,97 @@ require BASE_PATH . '/views/layouts/header.php';
                             <span class="badge bg-danger">Nonaktif</span>
                         <?php endif; ?>
                     </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal<?= $r['id'] ?>" title="Edit Data">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <a href="?page=admin.dosen.delete&id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-danger" data-confirm="Yakin ingin menghapus data dosen ini beserta akun loginnya?" title="Hapus Data">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
                 </tr>
+
+                <!-- Modal Edit per Row -->
+                <div class="modal fade" id="editModal<?= $r['id'] ?>" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <form action="?page=admin.dosen.update" method="POST">
+                        <?php csrfField(); ?>
+                        <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Edit Dosen: <?= e($r['nama']) ?></h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                                    <input type="text" name="nama" class="form-control" value="<?= e($r['nama']) ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">NIDN <span class="text-danger">*</span></label>
+                                    <input type="text" name="nidn" class="form-control" value="<?= e($r['nidn']) ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email (@uniku.ac.id) <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" value="<?= e($r['email'] ?? '') ?>" required pattern=".+@uniku\.ac\.id$" title="Email harus menggunakan domain @uniku.ac.id">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Password Login <span class="text-muted fw-normal">(Opsional - isi untuk mengubah)</span></label>
+                                    <input type="password" name="password" class="form-control" placeholder="Kosongkan jika tidak diubah">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Jabatan Akademik</label>
+                                    <select name="jabatan_akademik" class="form-select">
+                                        <option value="">Pilih Jabatan...</option>
+                                        <?php foreach ($dosenModel->getJabatanAkademikOptions() as $key => $val): ?>
+                                            <option value="<?= $key ?>" <?= ($r['jabatan_akademik'] ?? '') == $key ? 'selected' : '' ?>><?= $val ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Bidang Keahlian</label>
+                                    <select name="bidang_keahlian" class="form-select">
+                                        <option value="">Pilih Bidang Keahlian...</option>
+                                        <?php foreach ($dosenModel->getBidangKeahlianOptions() as $key => $val): ?>
+                                            <option value="<?= $key ?>" <?= ($r['bidang_keahlian'] ?? '') == $key ? 'selected' : '' ?>><?= $val ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">No. Handphone</label>
+                                    <input type="text" name="no_hp" class="form-control" value="<?= e($r['no_hp'] ?? '') ?>">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Pendidikan Terakhir</label>
+                                    <select name="pendidikan" class="form-select">
+                                        <option value="">Pilih...</option>
+                                        <option value="S2" <?= ($r['pendidikan'] ?? '') === 'S2' ? 'selected' : '' ?>>S2</option>
+                                        <option value="S3" <?= ($r['pendidikan'] ?? '') === 'S3' ? 'selected' : '' ?>>S3</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Program Studi</label>
+                                    <select name="prodi_id" class="form-select">
+                                        <option value="">-- Pilih Program Studi --</option>
+                                        <?php foreach ($prodiList as $prodi): ?>
+                                        <option value="<?= $prodi['id'] ?>" <?= ($r['prodi_id'] ?? '') == $prodi['id'] ? 'selected' : '' ?>>
+                                            <?= e($prodi['nama']) ?> (<?= e($prodi['kode']) ?>)
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Simpan Perubahan</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
                 <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
@@ -94,7 +185,7 @@ require BASE_PATH . '/views/layouts/header.php';
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form action="?page=admin.import_dosen" method="POST" enctype="multipart/form-data">
+      <form action="?page=admin.dosen.import" method="POST" enctype="multipart/form-data">
         <?php csrfField(); ?>
         <div class="modal-header">
           <h5 class="modal-title" id="importModalLabel">Import Data Dosen</h5>
@@ -102,8 +193,7 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
         <div class="modal-body">
             <div class="alert alert-info small">
-                <i class="bi bi-info-circle me-1"></i> Anda dapat mengupload banyak data dosen sekaligus menggunakan file CSV. 
-                Pastikan format sesuai dengan template yang disediakan.
+                <i class="bi bi-info-circle me-1"></i> Upload banyak data dosen sekaligus menggunakan file CSV.
             </div>
             <div class="mb-3">
                 <a href="<?= APP_URL ?>/assets/templates/template_dosen.csv" class="btn btn-outline-secondary btn-sm" download>
@@ -111,8 +201,8 @@ require BASE_PATH . '/views/layouts/header.php';
                 </a>
             </div>
             <div class="mb-3">
-                <label for="file_csv" class="form-label fw-bold">Upload File CSV</label>
-                <input class="form-control" type="file" id="file_csv" name="file_csv" accept=".csv" required>
+                <label for="file_csv_dosen" class="form-label fw-bold">Upload File CSV</label>
+                <input class="form-control" type="file" id="file_csv_dosen" name="file_csv" accept=".csv" required>
             </div>
         </div>
         <div class="modal-footer d-flex justify-content-between">
@@ -137,28 +227,59 @@ require BASE_PATH . '/views/layouts/header.php';
         <div class="modal-body">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label">Nama Lengkap (beserta Gelar)</label>
+                    <label class="form-label">Nama Lengkap (beserta Gelar) <span class="text-danger">*</span></label>
                     <input type="text" name="nama" class="form-control" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">NIDN</label>
+                    <label class="form-label">NIDN <span class="text-danger">*</span></label>
                     <input type="text" name="nidn" class="form-control" required>
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Email (@uniku.ac.id)</label>
+                    <label class="form-label">Email (@uniku.ac.id) <span class="text-danger">*</span></label>
                     <input type="email" name="email" class="form-control" required pattern=".+@uniku\.ac\.id$" title="Email harus menggunakan domain @uniku.ac.id">
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label">Password Login</label>
+                    <label class="form-label">Password Login <span class="text-danger">*</span></label>
                     <input type="password" name="password" class="form-control" required>
                 </div>
                 <div class="col-md-6">
+                    <label class="form-label">Jabatan Akademik</label>
+                    <select name="jabatan_akademik" class="form-select">
+                        <option value="">Pilih Jabatan...</option>
+                        <?php foreach ($dosenModel->getJabatanAkademikOptions() as $key => $val): ?>
+                            <option value="<?= $key ?>"><?= $val ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-6">
                     <label class="form-label">Bidang Keahlian</label>
-                    <input type="text" name="bidang_keahlian" class="form-control">
+                    <select name="bidang_keahlian" class="form-select">
+                        <option value="">Pilih Bidang Keahlian...</option>
+                        <?php foreach ($dosenModel->getBidangKeahlianOptions() as $key => $val): ?>
+                            <option value="<?= $key ?>"><?= $val ?></option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">No. Handphone</label>
                     <input type="text" name="no_hp" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Pendidikan Terakhir</label>
+                    <select name="pendidikan" class="form-select">
+                        <option value="">Pilih...</option>
+                        <option value="S2">S2</option>
+                        <option value="S3">S3</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Program Studi</label>
+                    <select name="prodi_id" class="form-select">
+                        <option value="">-- Pilih Program Studi --</option>
+                        <?php foreach ($prodiList as $prodi): ?>
+                        <option value="<?= $prodi['id'] ?>"><?= e($prodi['nama']) ?> (<?= e($prodi['kode']) ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             </div>
         </div>

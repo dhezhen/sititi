@@ -39,7 +39,70 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<div class="row g-4">
+<div class="row g-4 mt-2">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-graph-up me-2"></i>Statistik Pengajuan Judul Per Angkatan</span>
+                <span class="badge bg-primary">Monitoring Real-time</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sititi mb-0">
+                        <thead>
+                            <tr>
+                                <th>Angkatan</th>
+                                <th>Total Mahasiswa</th>
+                                <th>Sudah Mengajukan</th>
+                                <th>Belum Mengajukan</th>
+                                <th>Pengajuan Aktif (Proses)</th>
+                                <th>Progress</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($angkatanStats)): ?>
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">Belum ada data mahasiswa.</td>
+                            </tr>
+                            <?php else: ?>
+                            <?php foreach ($angkatanStats as $s): 
+                                $total = $s['total_mahasiswa'];
+                                $sudah = $s['sudah_mengajukan'];
+                                $belum = $total - $sudah;
+                                $persen = $total > 0 ? round(($sudah / $total) * 100) : 0;
+                            ?>
+                            <tr>
+                                <td class="fw-bold">Angkatan <?= $s['angkatan'] ?></td>
+                                <td><?= number_format($total) ?> Orang</td>
+                                <td>
+                                    <span class="text-success fw-semibold"><?= number_format($sudah) ?></span>
+                                </td>
+                                <td>
+                                    <span class="text-danger fw-semibold"><?= number_format($belum) ?></span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info text-dark"><?= number_format($s['pengajuan_aktif']) ?> Pengajuan</span>
+                                </td>
+                                <td style="width: 200px;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress flex-grow-1" style="height: 8px;">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: <?= $persen ?>%"></div>
+                                        </div>
+                                        <span class="small fw-bold"><?= $persen ?>%</span>
+                                    </div>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
     <div class="col-md-8">
         <div class="card h-100">
             <div class="card-header"><i class="bi bi-ui-checks-grid me-2"></i>Akses Cepat</div>

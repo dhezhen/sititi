@@ -119,6 +119,17 @@ require BASE_PATH . '/views/layouts/header.php';
                                     <label class="form-label">No. Handphone</label>
                                     <input type="text" name="no_hp" class="form-control" value="<?= e($r['no_hp'] ?? '') ?>">
                                 </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Program Studi</label>
+                                    <select name="prodi_id" class="form-select">
+                                        <option value="">-- Pilih Program Studi --</option>
+                                        <?php foreach ($prodiList as $prodi): ?>
+                                        <option value="<?= $prodi['id'] ?>" <?= ($r['prodi_id'] ?? '') == $prodi['id'] ? 'selected' : '' ?>>
+                                            <?= e($prodi['nama']) ?> (<?= e($prodi['kode']) ?>)
+                                        </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                                 <div class="col-12">
                                     <label class="form-label">Alamat Lengkap</label>
                                     <textarea name="alamat" class="form-control" rows="2"><?= e($r['alamat'] ?? '') ?></textarea>
@@ -206,7 +217,7 @@ require BASE_PATH . '/views/layouts/header.php';
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">NIM</label>
-                    <input type="text" name="nim" class="form-control" required>
+                    <input type="text" name="nim" id="create_nim" class="form-control" required>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Email (@uniku.ac.id)</label>
@@ -218,7 +229,7 @@ require BASE_PATH . '/views/layouts/header.php';
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Angkatan</label>
-                    <input type="number" name="angkatan" class="form-control" value="<?= date('Y') ?>">
+                    <input type="number" name="angkatan" id="create_angkatan" class="form-control" value="<?= date('Y') ?>">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Semester</label>
@@ -227,6 +238,15 @@ require BASE_PATH . '/views/layouts/header.php';
                 <div class="col-md-4">
                     <label class="form-label">No. Handphone</label>
                     <input type="text" name="no_hp" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Program Studi</label>
+                    <select name="prodi_id" class="form-select">
+                        <option value="">-- Pilih Program Studi --</option>
+                        <?php foreach ($prodiList as $prodi): ?>
+                        <option value="<?= $prodi['id'] ?>"><?= e($prodi['nama']) ?> (<?= e($prodi['kode']) ?>)</option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
                 <div class="col-12">
                     <label class="form-label">Alamat Lengkap</label>
@@ -242,5 +262,24 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const nimInput = document.getElementById('create_nim');
+    const angkatanInput = document.getElementById('create_angkatan');
+
+    if (nimInput && angkatanInput) {
+        nimInput.addEventListener('input', function() {
+            const nim = this.value;
+            if (nim.length >= 4) {
+                const year = nim.substring(0, 4);
+                if (!isNaN(year)) {
+                    angkatanInput.value = year;
+                }
+            }
+        });
+    }
+});
+</script>
 
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>

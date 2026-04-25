@@ -268,7 +268,22 @@ switch ($page) {
         $nid = (int)get('id');
         $ref = (int)get('ref');
         (new Notifikasi())->markRead($nid, Auth::id());
-        redirect($ref ? '?page=pengajuan.show&id=' . $ref : '?page=notif');
+        
+        $target = '?page=notif';
+        if ($ref) {
+            $role = Auth::role();
+            if ($role === ROLE_STAFF) {
+                $target = '?page=staff.verifikasi&id=' . $ref;
+            } elseif ($role === ROLE_KAPRODI) {
+                $target = '?page=kaprodi.review&id=' . $ref;
+            } elseif ($role === ROLE_DEWAN) {
+                $target = '?page=dewan.pembimbing&id=' . $ref;
+            } else {
+                // Mahasiswa atau Superadmin
+                $target = '?page=pengajuan.show&id=' . $ref;
+            }
+        }
+        redirect($target);
         break;
 
     case 'notif.readall':

@@ -50,6 +50,29 @@ class Dosen {
         return $stmt->fetchAll();
     }
 
+    public function getJabatanAkademikOptions(): array {
+        return [
+            'Lektor' => 'Lektor',
+            'Lektor Kepala' => 'Lektor Kepala',
+            'Asisten Ahli' => 'Asisten Ahli',
+            'Profesor' => 'Profesor',
+            'Guru Besar' => 'Guru Besar'
+        ];
+    }
+    public function getBidangKeahlianOptions(): array { 
+        return [
+            'Pemrograman Web' => 'Pemrograman Web',
+            'Database'        => 'Database',
+            'Pemrograman Mobile' => 'Pemrograman Mobile',
+            'Jaringan Komputer' => 'Jaringan Komputer',
+            'Kecerdasan Buatan' => 'Kecerdasan Buatan',
+            'Pemmrograman Game' => 'Pemmrograman Game',
+            'Computer Vision'  => 'Computer Vision',
+            'Analisis Data'     => 'Analisis Data',
+            'Cyber Security' => 'Cyber Security',
+        ];
+    }
+
     /**
      * Ambil dosen berdasarkan ID
      */
@@ -84,8 +107,8 @@ class Dosen {
      */
     public function create(array $data): int {
         $stmt = $this->db->prepare(
-            "INSERT INTO dosen (nama, nidn, email, prodi_id, bidang_keahlian, no_hp, is_active)
-             VALUES (?, ?, ?, ?, ?, ?, 1)"
+            "INSERT INTO dosen (nama, nidn, email, prodi_id, bidang_keahlian, no_hp, jabatan_akademik, pendidikan, is_active)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)"
         );
         $stmt->execute([
             $data['nama'],
@@ -94,9 +117,12 @@ class Dosen {
             $data['prodi_id']        ?? null,
             $data['bidang_keahlian'] ?? null,
             $data['no_hp']           ?? null,
+            $data['jabatan_akademik'] ?? null,
+            $data['pendidikan']      ?? null,
         ]);
         return (int)$this->db->lastInsertId();
     }
+
 
     /**
      * Update data dosen
@@ -104,7 +130,7 @@ class Dosen {
     public function update(int $id, array $data): bool {
         $stmt = $this->db->prepare(
             "UPDATE dosen
-             SET nama=?, nidn=?, email=?, prodi_id=?, bidang_keahlian=?, no_hp=?, is_active=?
+             SET nama=?, nidn=?, email=?, prodi_id=?, bidang_keahlian=?, no_hp=?, jabatan_akademik=?, pendidikan=?, is_active=?
              WHERE id=?"
         );
         return $stmt->execute([
@@ -114,6 +140,8 @@ class Dosen {
             $data['prodi_id']        ?? null,
             $data['bidang_keahlian'] ?? null,
             $data['no_hp']           ?? null,
+            $data['jabatan_akademik'] ?? null,
+            $data['pendidikan']      ?? null,
             $data['is_active']       ?? 1,
             $id,
         ]);
@@ -126,4 +154,5 @@ class Dosen {
         $stmt = $this->db->prepare("DELETE FROM dosen WHERE id = ?");
         return $stmt->execute([$id]);
     }
+
 }
