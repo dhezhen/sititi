@@ -62,9 +62,11 @@ require BASE_PATH . '/views/layouts/header.php';
                     <i class="bi bi-folder2-open"></i>
                     <h5>Belum Ada Pengajuan</h5>
                     <p class="mb-3">Mulai dengan membuat pengajuan judul skripsi.</p>
+                    <?php if (!$hasActive): ?>
                     <a href="?page=pengajuan.create" class="btn btn-primary">
                         <i class="bi bi-plus-circle me-1"></i>Buat Pengajuan
                     </a>
+                    <?php endif; ?>
                 </div>
                 <?php else: ?>
                 <table class="table table-sititi mb-0">
@@ -110,9 +112,11 @@ require BASE_PATH . '/views/layouts/header.php';
                 <i class="bi bi-lightning-charge me-2 text-warning"></i>Aksi Cepat
             </div>
             <div class="card-body d-grid gap-2">
+                <?php if (!$hasActive): ?>
                 <a href="?page=pengajuan.create" class="btn btn-primary">
                     <i class="bi bi-plus-circle me-2"></i>Buat Pengajuan Baru
                 </a>
+                <?php endif; ?>
                 <a href="?page=pengajuan" class="btn btn-outline-secondary">
                     <i class="bi bi-list-ul me-2"></i>Lihat Semua Pengajuan
                 </a>

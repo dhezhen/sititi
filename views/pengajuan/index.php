@@ -11,9 +11,11 @@ require BASE_PATH . '/views/layouts/header.php';
         </ol></nav>
         <h1><i class="bi bi-file-earmark-text me-2 text-primary"></i>Pengajuan Saya</h1>
     </div>
+    <?php if (!$hasActive): ?>
     <a href="?page=pengajuan.create" class="btn btn-primary">
         <i class="bi bi-plus-circle me-1"></i>Buat Pengajuan Baru
     </a>
+    <?php endif; ?>
 </div>
 
 <?php renderFlash(); ?>
@@ -25,9 +27,11 @@ require BASE_PATH . '/views/layouts/header.php';
             <i class="bi bi-folder2-open"></i>
             <h5>Belum Ada Pengajuan</h5>
             <p>Mulai dengan membuat pengajuan judul skripsi pertama Anda.</p>
+            <?php if (!$hasActive): ?>
             <a href="?page=pengajuan.create" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-1"></i>Buat Sekarang
             </a>
+            <?php endif; ?>
         </div>
         <?php else: ?>
         <table class="table table-sititi mb-0">

@@ -5,12 +5,13 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <div class="page-header d-flex justify-content-between align-items-start">
     <div>
-        <nav aria-label="breadcrumb"><ol class="breadcrumb">
+        <nav aria-label="breadcrumb" class="d-print-none"><ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="?page=dashboard">Dashboard</a></li>
             <li class="breadcrumb-item"><a href="?page=pengajuan">Pengajuan</a></li>
             <li class="breadcrumb-item active">Detail</li>
         </ol></nav>
-        <h1><i class="bi bi-file-earmark-text me-2 text-primary"></i>Detail Pengajuan</h1>
+        <h1 class="d-print-none"><i class="bi bi-file-earmark-text me-2 text-primary"></i>Detail Pengajuan</h1>
+        <h1 class="d-none d-print-block">Bukti Pengajuan Judul Skripsi</h1>
     </div>
     <div class="d-flex gap-2">
         <?php if (Auth::role() === ROLE_MAHASISWA): ?>
@@ -33,6 +34,11 @@ require BASE_PATH . '/views/layouts/header.php';
             <i class="bi bi-trash"></i>
         </a>
         <?php endif; ?>
+        <?php endif; ?>
+        <?php if ($pengajuan['status'] !== 'draft'): ?>
+        <button type="button" class="btn btn-secondary" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Cetak Bukti
+        </button>
         <?php endif; ?>
     </div>
 </div>

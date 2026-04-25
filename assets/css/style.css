@@ -148,3 +148,27 @@ body{font-family:'Inter',sans-serif;background:var(--body-bg);color:#1e1b4b;min-
 .pagination .page-link:hover{background:var(--primary-light)}
 
 @media(max-width:768px){.sititi-sidebar{display:none}.content-wrapper{padding:18px 16px}}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+@media print {
+    body { background: #fff; color: #000; font-size: 11pt; margin: 0; padding: 0; }
+    .sititi-navbar, .sititi-sidebar, .sititi-footer, .d-print-none, .btn { display: none !important; }
+    .main-content { min-height: auto; }
+    .content-wrapper { padding: 0; max-width: 100%; }
+    .card { border: none !important; box-shadow: none !important; }
+    .card-header { padding: 0 0 10px 0; border-bottom: 2px solid #000; font-size: 14pt; margin-bottom: 15px; }
+    .badge { border: 1px solid #000; color: #000 !important; background: transparent !important; }
+    .timeline { padding-left: 0; }
+    .timeline::before { display: none; }
+    .timeline-item { margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 10px; }
+    .timeline-dot { display: none; }
+    .timeline-content { border-left: none; box-shadow: none; padding: 0; }
+    table { width: 100%; border-collapse: collapse; }
+    table td { padding: 5px 0; border-bottom: 1px solid #eee; }
+    a { text-decoration: none; color: #000; }
+    
+    /* Ensure colors print if browser supports it */
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+}

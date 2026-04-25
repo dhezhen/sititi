@@ -60,6 +60,15 @@ class Pengajuan {
     }
 
     /**
+     * Cek apakah mahasiswa sudah memiliki pengajuan aktif (selain ditolak)
+     */
+    public function hasActiveSubmission(int $userId): bool {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM pengajuan_judul WHERE user_id = ? AND status != 'ditolak'");
+        $stmt->execute([$userId]);
+        return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
      * Ambil semua pengajuan dengan filter & pagination (untuk Staff/Kaprodi/Dewan)
      */
     public function getAll(array $filters = [], int $page = 1, int $perPage = 15): array {

@@ -27,7 +27,7 @@ foreach ($modelFiles as $model) {
 // ── Autoload Controllers ──────────────────────────────────────
 $controllerFiles = [
     'AuthController', 'DashboardController', 'PengajuanController',
-    'StaffController', 'KaprodiController', 'DewanController',
+    'StaffController', 'KaprodiController', 'DewanController', 'AdminController', 'AccountController',
 ];
 foreach ($controllerFiles as $ctrl) {
     require_once __DIR__ . "/controllers/{$ctrl}.php";
@@ -60,6 +60,15 @@ switch ($page) {
 
     case 'logout':
         (new AuthController())->logout();
+        break;
+
+    // ── PROFIL ──────────────────────────────────────────────────
+    case 'profil':
+        (new AccountController())->profil();
+        break;
+
+    case 'profil.update':
+        (new AccountController())->updateProfil();
         break;
 
     // ── DASHBOARD ─────────────────────────────────────────────
@@ -143,6 +152,43 @@ switch ($page) {
 
     case 'dewan.proses':
         (new DewanController())->prosesPembimbing();
+        break;
+
+    // ── ADMIN / DATA MASTER ───────────────────────────────────
+    case 'admin.mahasiswa':
+        (new AdminController())->mahasiswa();
+        break;
+
+    case 'admin.import_mahasiswa':
+        (new AdminController())->importMahasiswa();
+        break;
+
+    case 'admin.dosen':
+        (new AdminController())->dosen();
+        break;
+
+    case 'admin.import_dosen':
+        (new AdminController())->importDosen();
+        break;
+
+    case 'admin.periode':
+        (new AdminController())->periode();
+        break;
+
+    case 'admin.periode.store':
+        (new AdminController())->periodeStore();
+        break;
+
+    case 'admin.periode.update':
+        (new AdminController())->periodeUpdate();
+        break;
+
+    case 'admin.periode.set_active':
+        (new AdminController())->periodeSetActive();
+        break;
+
+    case 'admin.periode.delete':
+        (new AdminController())->periodeDelete();
         break;
 
     // ── NOTIFIKASI ────────────────────────────────────────────

@@ -45,6 +45,7 @@ class DashboardController {
         $stats    = $pengajuanModel->getStats($userId);
         $riwayat  = $pengajuanModel->getByUserId($userId, 1, 5);
         $notifasi = $notifModel->getByUserId($userId, 5);
+        $hasActive = $pengajuanModel->hasActiveSubmission($userId);
 
         require BASE_PATH . '/views/dashboard/mahasiswa.php';
     }

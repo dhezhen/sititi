@@ -28,6 +28,7 @@ class PengajuanController {
         $perPage = 10;
         $pages   = (int)ceil($total / $perPage);
         $list    = $this->pengajuanModel->getByUserId($userId, $page, $perPage);
+        $hasActive = $this->pengajuanModel->hasActiveSubmission($userId);
 
         require BASE_PATH . '/views/pengajuan/index.php';
     }
@@ -37,6 +38,11 @@ class PengajuanController {
      */
     public function create(): void {
         Auth::requireRole(ROLE_MAHASISWA);
+
+        if ($this->pengajuanModel->hasActiveSubmission(Auth::id())) {
+            setFlash('warning', 'Anda sudah memiliki pengajuan judul yang aktif. Maksimal 1 judul.');
+            redirect('?page=pengajuan');
+        }
 
         // Ambil periode aktif
         $db      = getDB();
@@ -58,6 +64,12 @@ class PengajuanController {
         verifyCsrf();
 
         $userId = Auth::id();
+
+        if ($this->pengajuanModel->hasActiveSubmission($userId)) {
+            setFlash('danger', 'Anda sudah memiliki pengajuan judul yang aktif.');
+            redirect('?page=pengajuan');
+        }
+
         $judul  = trim(post('judul'));
         $desk   = trim(post('deskripsi'));
         $bidang = trim(post('bidang'));
