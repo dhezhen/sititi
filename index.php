@@ -69,6 +69,15 @@ switch ($page) {
         (new AuthController())->logout();
         break;
 
+    case 'switch-role':
+        Auth::requireLogin();
+        $newRole = get('role');
+        if ($newRole && Auth::switchRole($newRole)) {
+            setFlash('success', "Peran berhasil diganti ke: " . ucfirst($newRole));
+        }
+        redirect('?page=dashboard');
+        break;
+
     // ── PROFIL ──────────────────────────────────────────────────
     case 'profil':
         (new AccountController())->profil();
@@ -138,6 +147,10 @@ switch ($page) {
     // ── KAPRODI ───────────────────────────────────────────────
     case 'kaprodi':
         (new KaprodiController())->index();
+        break;
+
+    case 'kaprodi.history':
+        (new KaprodiController())->history();
         break;
 
     case 'kaprodi.review':

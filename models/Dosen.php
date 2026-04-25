@@ -48,7 +48,7 @@ class Dosen {
         if ($angkatan) {
             $sql .= ", (SELECT COUNT(*) FROM pembimbing pb 
                         JOIN pengajuan_judul pj ON pj.id = pb.pengajuan_id 
-                        JOIN mahasiswa m ON m.user_id = pj.mahasiswa_id 
+                        JOIN mahasiswa m ON m.user_id = pj.user_id 
                         WHERE pb.dosen_id = dosen.id AND m.angkatan = ?) as workload";
             $params[] = $angkatan;
         }
@@ -170,7 +170,7 @@ class Dosen {
         $sql = "SELECT m.angkatan, COUNT(*) as total
                 FROM pembimbing p
                 JOIN pengajuan_judul pj ON pj.id = p.pengajuan_id
-                JOIN mahasiswa m ON m.user_id = pj.mahasiswa_id
+                JOIN mahasiswa m ON m.user_id = pj.user_id
                 WHERE p.dosen_id = ?
                 GROUP BY m.angkatan
                 ORDER BY m.angkatan DESC";
@@ -180,29 +180,38 @@ class Dosen {
     }
 
     /**
-     * Ambil beban kerja seluruh dosen
+     * Ambil beban kerja semua dosen, di-group berdasarkan dosen_id
      */
-    public function getAllWorkload(?int $prodiId = null): array {
-        $sql = "SELECT d.id, d.nama, d.nidn, d.jabatan_akademik,
-                       m.angkatan, COUNT(pb.id) as total
-                FROM dosen d
-                LEFT JOIN pembimbing pb ON pb.dosen_id = d.id
-                LEFT JOIN pengajuan_judul pj ON pj.id = pb.pengajuan_id
-                LEFT JOIN mahasiswa m ON m.user_id = pj.mahasiswa_id
-                WHERE d.is_active = 1";
-        
-        $params = [];
-        if ($prodiId) {
-            $sql .= " AND d.prodi_id = ?";
-            $params[] = $prodiId;
-        }
-        
-        $sql .= " GROUP BY d.id, m.angkatan
-                  ORDER BY d.nama ASC, m.angkatan DESC";
-        
+    public function getAllWorkloadGrouped(): array {
+        $sql = "SELECT d.id, d.nama, m.angkatan, COUNT(p.id) as total 
+                FROM dosen d 
+                LEFT JOIN pembimbing p ON d.id = p.dosen_id 
+                LEFT JOIN pengajuan_judul pj ON p.pengajuan_id = pj.id 
+                LEFT JOIN mahasiswa m ON pj.user_id = m.user_id 
+                WHERE d.is_active = 1 
+                GROUP BY d.id, m.angkatan 
+                ORDER BY d.nama ASC, m.angkatan DESC";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        $stmt->execute();
+        $raw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $grouped = [];
+        foreach ($raw as $row) {
+            $id = $row['id'];
+            if (!isset($grouped[$id])) {
+                $grouped[$id] = [
+                    'id' => $id,
+                    'nama' => $row['nama'],
+                    'total_semua' => 0,
+                    'per_angkatan' => []
+                ];
+            }
+            if ($row['angkatan']) {
+                $grouped[$id]['per_angkatan'][$row['angkatan']] = $row['total'];
+                $grouped[$id]['total_semua'] += $row['total'];
+            }
+        }
+        return array_values($grouped);
     }
 
     /**

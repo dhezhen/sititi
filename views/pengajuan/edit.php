@@ -73,7 +73,9 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                             <label for="pembimbing_1_id" class="form-label">Usulan Pembimbing Utama</label>
                             <select class="form-select" id="pembimbing_1_id" name="pembimbing_1_id">
                                 <option value="">-- Pilih Pembimbing 1 --</option>
-                                <?php foreach ($listDosen as $d): ?>
+                                <?php foreach ($listDosen as $d): 
+                                    if (strcasecmp($d['jabatan_akademik'] ?? '', 'Asisten Ahli') === 0) continue; 
+                                ?>
                                 <option value="<?= $d['id'] ?>" <?= $pengajuan['pembimbing_1_id'] == $d['id'] ? 'selected' : '' ?>>
                                     <?= e($d['nama']) ?>
                                 </option>
@@ -121,6 +123,11 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                                 <strong>Klik atau seret file PDF</strong>
                                 <br><small class="text-muted">Maks 5MB</small>
                             </div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="<?= APP_URL ?>/assets/templates/template_ringkasan_proposal.docx" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-file-earmark-word me-1"></i> Unduh Template Ringkasan Proposal (.docx)
+                            </a>
                         </div>
                         <input type="file" id="file_proposal" name="file_proposal"
                                class="d-none" accept=".pdf,application/pdf">

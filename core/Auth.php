@@ -20,11 +20,44 @@ class Auth {
      */
     public static function login(array $user): void {
         self::startSession();
-        $_SESSION['user_id']   = $user['id'];
-        $_SESSION['user_nama'] = $user['nama'];
-        $_SESSION['user_email']= $user['email'];
-        $_SESSION['user_role'] = $user['role'];
-        session_regenerate_id(true); // Cegah session fixation
+        $_SESSION['user_id']    = $user['id'];
+        $_SESSION['user_nama']  = $user['nama'];
+        $_SESSION['user_email'] = $user['email'];
+        
+        // Ambil semua role dari tabel user_roles
+        $userModel = new User();
+        $roles = $userModel->getRoles($user['id']);
+        if (empty($roles)) {
+            $roles = [$user['role']]; // fallback ke role utama jika tabel link kosong
+        }
+        
+        $_SESSION['user_roles'] = $roles;
+        
+        // Prioritas role awal: Superadmin > Kaprodi > Staff > Dewan > Dosen
+        $priority = [ROLE_SUPERADMIN, ROLE_KAPRODI, ROLE_STAFF, ROLE_DEWAN, ROLE_DOSEN];
+        $selectedRole = $roles[0];
+        foreach ($priority as $p) {
+            if (in_array($p, $roles)) {
+                $selectedRole = $p;
+                break;
+            }
+        }
+        
+        $_SESSION['user_role']  = $selectedRole;
+        session_regenerate_id(true);
+    }
+
+    /**
+     * Ganti role aktif (untuk user dengan multi-role)
+     */
+    public static function switchRole(string $newRole): bool {
+        self::startSession();
+        $roles = self::roles();
+        if (in_array($newRole, $roles)) {
+            $_SESSION['user_role'] = $newRole;
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -61,6 +94,7 @@ class Auth {
             'nama'  => $_SESSION['user_nama'],
             'email' => $_SESSION['user_email'],
             'role'  => $_SESSION['user_role'],
+            'roles' => $_SESSION['user_roles'] ?? [$_SESSION['user_role']],
         ];
     }
 
@@ -79,6 +113,13 @@ class Auth {
     }
 
     /**
+     * Ambil semua role user (array)
+     */
+    public static function roles(): array {
+        return self::check() ? ($_SESSION['user_roles'] ?? [$_SESSION['user_role']]) : [];
+    }
+
+    /**
      * Cek apakah user memiliki role tertentu
      * @param string|array $roles
      */
@@ -86,10 +127,14 @@ class Auth {
         if (!self::check()) return false;
         
         // Superadmin memiliki akses ke semua role
-        if ($_SESSION['user_role'] === ROLE_SUPERADMIN) return true;
+        if (in_array(ROLE_SUPERADMIN, self::roles())) return true;
 
         $roles = (array)$roles;
-        return in_array($_SESSION['user_role'], $roles);
+        $userRoles = self::roles();
+        foreach ($roles as $r) {
+            if (in_array($r, $userRoles)) return true;
+        }
+        return false;
     }
 
     /**
@@ -161,13 +206,18 @@ class Auth {
             return true;
         }
 
-        // Cek tabel role_menus
-        $stmt = $db->prepare("
-            SELECT 1 FROM role_menus rm 
-            JOIN roles r ON rm.role_id = r.id 
-            WHERE r.kode = ? AND rm.menu_id = ?
-        ");
-        $stmt->execute([self::role(), $menuId]);
+        // Cek tabel role_menus untuk SEMUA role yang dimiliki user
+        $userRoles = self::roles();
+        $placeholders = implode(',', array_fill(0, count($userRoles), '?'));
+        
+        $sql = "SELECT 1 FROM role_menus rm 
+                JOIN roles r ON rm.role_id = r.id 
+                WHERE r.kode IN ($placeholders) AND rm.menu_id = ?
+                LIMIT 1";
+        
+        $stmt = $db->prepare($sql);
+        $params = array_merge($userRoles, [$menuId]);
+        $stmt->execute($params);
         return (bool)$stmt->fetchColumn();
     }
 

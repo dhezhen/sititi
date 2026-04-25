@@ -72,7 +72,13 @@ require BASE_PATH . '/views/layouts/header.php';
                         <?php endif; ?>
                     </td>
                     <td>
-                        <span class="badge border text-dark bg-light"><?= e(ucfirst($r['user_role'] ?? 'No Acc')) ?></span>
+                        <?php if (!empty($r['user_roles'])): ?>
+                            <?php foreach ($r['user_roles'] as $role): ?>
+                                <span class="badge border text-dark bg-light"><?= e(ucfirst($role)) ?></span>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <span class="badge border text-dark bg-light"><?= e(ucfirst($r['user_role'] ?? 'No Acc')) ?></span>
+                        <?php endif; ?>
                     </td>
                     <td>
                         <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal<?= $r['id'] ?>" title="Edit Data">
@@ -154,14 +160,25 @@ require BASE_PATH . '/views/layouts/header.php';
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
+                                <div class="col-md-12">
                                     <label class="form-label">Role User <span class="text-danger">*</span></label>
-                                    <select name="role" class="form-select" required>
-                                        <option value="dosen" <?= $r['user_role'] === 'dosen' ? 'selected' : '' ?>>Dosen (Pembimbing)</option>
-                                        <option value="dewan" <?= $r['user_role'] === 'dewan' ? 'selected' : '' ?>>Dewan (Reviewer)</option>
-                                        <option value="kaprodi" <?= $r['user_role'] === 'kaprodi' ? 'selected' : '' ?>>Kaprodi</option>
-                                        <option value="staff" <?= $r['user_role'] === 'staff' ? 'selected' : '' ?>>Staff</option>
-                                    </select>
+                                    <div class="d-flex flex-wrap gap-3">
+                                        <?php 
+                                            $currentRoles = $r['user_roles'] ?? [$r['user_role']];
+                                            $availableRoles = [
+                                                'dosen'   => 'Dosen (Pembimbing)',
+                                                'dewan'   => 'Dewan (Reviewer)',
+                                                'kaprodi' => 'Kaprodi',
+                                                'staff'   => 'Staff'
+                                            ];
+                                            foreach ($availableRoles as $code => $label):
+                                        ?>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="roles[]" value="<?= $code ?>" id="role_<?= $code ?>_<?= $r['id'] ?>" <?= in_array($code, $currentRoles) ? 'checked' : '' ?>>
+                                            <label class="form-check-input-label" for="role_<?= $code ?>_<?= $r['id'] ?>"><?= $label ?></label>
+                                        </div>
+                                        <?php endforeach; ?>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -299,16 +316,28 @@ require BASE_PATH . '/views/layouts/header.php';
                         <?php endforeach; ?>
                     </select>
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-12">
                     <label class="form-label">Role User <span class="text-danger">*</span></label>
-                    <select name="role" class="form-select" required>
-                        <option value="dosen" selected>Dosen (Pembimbing saja)</option>
-                        <option value="dewan">Dewan (Reviewer Proposal)</option>
-                        <option value="kaprodi">Kaprodi</option>
-                        <option value="staff">Staff</option>
-                    </select>
+                    <div class="d-flex flex-wrap gap-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="roles[]" value="dosen" id="role_new_dosen" checked>
+                            <label class="form-check-input-label" for="role_new_dosen">Dosen (Pembimbing)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="roles[]" value="dewan" id="role_new_dewan">
+                            <label class="form-check-input-label" for="role_new_dewan">Dewan (Reviewer)</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="roles[]" value="kaprodi" id="role_new_kaprodi">
+                            <label class="form-check-input-label" for="role_new_kaprodi">Kaprodi</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="roles[]" value="staff" id="role_new_staff">
+                            <label class="form-check-input-label" for="role_new_staff">Staff</label>
+                        </div>
+                    </div>
                     <div class="form-text small text-info">
-                        <i class="bi bi-info-circle me-1"></i> Default adalah Dosen.
+                        <i class="bi bi-info-circle me-1"></i> Dosen dapat memiliki lebih dari satu peran.
                     </div>
                 </div>
             </div>

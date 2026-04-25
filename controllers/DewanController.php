@@ -49,34 +49,33 @@ class DewanController {
         verifyCsrf();
 
         $id      = (int)post('pengajuan_id');
-        $dosen1  = (int)post('dosen1_id');
-        $dosen2  = post('dosen2_id') ? (int)post('dosen2_id') : null;
+        $aksi    = post('aksi'); // 'tetapkan' atau 'revisi'
         $catatan = trim(post('catatan'));
-
-        if (!$dosen1) { setFlash('danger', 'Pembimbing 1 wajib dipilih.'); redirect('?page=dewan.pembimbing&id=' . $id); }
-        
-        // Validasi Asisten Ahli
-        $dosenModel = new Dosen();
-        $d1 = $dosenModel->findById($dosen1);
-        if ($d1 && $d1['jabatan_akademik'] === 'Asisten Ahli') {
-            setFlash('danger', 'Dosen dengan jabatan Asisten Ahli tidak dapat menjadi Pembimbing 1.');
-            redirect('?page=dewan.pembimbing&id=' . $id);
-        }
-
-        if ($dosen2 && $dosen2 === $dosen1) { setFlash('danger', 'Pembimbing 1 dan 2 tidak boleh sama.'); redirect('?page=dewan.pembimbing&id=' . $id); }
 
         $pengajuan = $this->pengajuanModel->findById($id);
         if (!$pengajuan) { setFlash('danger', 'Tidak ditemukan.'); redirect('?page=dewan'); }
 
-        $this->pembimbingModel->assignAll($id, $dosen1, $dosen2);
-        $this->pengajuanModel->updateStatus($id, STATUS_PEMBIMBING, $catatan ?: 'Pembimbing telah ditentukan.');
+        if ($aksi === 'revisi') {
+            if (empty($catatan)) { 
+                setFlash('danger', 'Catatan revisi wajib diisi.'); 
+                redirect('?page=dewan.pembimbing&id=' . $id); 
+            }
+            $this->pengajuanModel->updateStatus($id, STATUS_REVISI, $catatan);
+            $this->logModel->add($id, $pengajuan['status'], STATUS_REVISI, Auth::id(), $catatan);
+            $this->notifModel->send($pengajuan['user_id'], "Pengajuan perlu direvisi oleh Dewan. Catatan: $catatan", $id);
+            setFlash('warning', 'Pengajuan dikembalikan untuk revisi.');
+            redirect('?page=dewan');
+        }
+
+        // Aksi: Setujui
+        $this->pengajuanModel->updateStatus($id, STATUS_PEMBIMBING, $catatan ?: 'Proposal disetujui oleh Dewan Bimbingan.');
         $this->logModel->add($id, $pengajuan['status'], STATUS_PEMBIMBING, Auth::id(),
-                             $catatan ?: 'Pembimbing 1 & 2 ditentukan oleh Dewan.');
+                             $catatan ?: 'Proposal disetujui oleh Dewan Bimbingan.');
 
         $this->notifModel->send($pengajuan['user_id'],
-            "Dosen pembimbing skripsi Anda telah ditentukan. Segera hubungi pembimbing Anda.", $id);
+            "Proposal Anda telah disetujui oleh Dewan Bimbingan. Segera hubungi pembimbing Anda.", $id);
 
-        setFlash('success', 'Pembimbing berhasil ditentukan.');
+        setFlash('success', 'Proposal berhasil disetujui.');
         redirect('?page=dewan');
     }
 }

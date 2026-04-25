@@ -18,15 +18,43 @@ class KaprodiController {
 
     public function index(): void {
         Auth::requireRole(ROLE_KAPRODI);
+        
+        $db = getDB();
+        $stmt = $db->prepare("SELECT prodi_id FROM dosen WHERE email = ? LIMIT 1");
+        $stmt->execute([Auth::user()['email']]);
+        $prodiId = $stmt->fetchColumn();
+
         $search  = get('search', '');
         $status  = get('status', STATUS_DIVERIFIKASI);
         $page    = max(1, (int)get('p', 1));
         $perPage = 15;
-        $filters = ['search' => $search, 'status' => $status];
+        
+        $filters = ['search' => $search, 'status' => $status, 'prodi_id' => $prodiId];
         $total   = $this->pengajuanModel->count($filters);
         $pages   = (int)ceil($total / $perPage);
         $list    = $this->pengajuanModel->getAll($filters, $page, $perPage);
         require BASE_PATH . '/views/kaprodi/index.php';
+    }
+
+    public function history(): void {
+        Auth::requireRole(ROLE_KAPRODI);
+        
+        $db = getDB();
+        $stmt = $db->prepare("SELECT prodi_id FROM dosen WHERE email = ? LIMIT 1");
+        $stmt->execute([Auth::user()['email']]);
+        $prodiId = $stmt->fetchColumn();
+
+        $search  = get('search', '');
+        $status  = get('status', ''); // Semua status
+        $page    = max(1, (int)get('p', 1));
+        $perPage = 15;
+        
+        $filters = ['search' => $search, 'status' => $status, 'prodi_id' => $prodiId];
+        $total   = $this->pengajuanModel->count($filters);
+        $pages   = (int)ceil($total / $perPage);
+        $list    = $this->pengajuanModel->getAll($filters, $page, $perPage);
+        
+        require BASE_PATH . '/views/kaprodi/history.php';
     }
 
     public function review(): void {
@@ -82,15 +110,10 @@ class KaprodiController {
                 'pembimbing_2_id' => $p2,
             ]);
 
-            // Finalize to pembimbing table is NO LONGER done by Kaprodi here
-            // But we keep the update to the proposal advisors
-            $this->pengajuanModel->update($id, [
-                'judul'         => $pengajuan['judul'],
-                'deskripsi'     => $pengajuan['deskripsi'],
-                'bidang'        => $pengajuan['bidang'],
-                'pembimbing_1_id' => $p1,
-                'pembimbing_2_id' => $p2,
-            ]);
+            // Finalize to pembimbing table
+            $pembimbingModel = new Pembimbing();
+            $pembimbingModel->assignAll($id, $p1, $p2);
+
 
             $this->pengajuanModel->updateStatus($id, STATUS_DISETUJUI, $catatan ?: 'Disetujui Kaprodi, menunggu review proposal oleh Dewan.');
             $this->logModel->add($id, $pengajuan['status'], STATUS_DISETUJUI, Auth::id(), $catatan ?: 'Disetujui Kaprodi.');

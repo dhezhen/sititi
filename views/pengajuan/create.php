@@ -63,9 +63,9 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                             Deskripsi / Latar Belakang <span class="text-danger">*</span>
                         </label>
                         <textarea class="form-control" id="deskripsi" name="deskripsi"
-                                  rows="6" required minlength="30"
+                                  rows="10" required minlength="30"
                                   placeholder="Jelaskan latar belakang dan tujuan penelitian Anda..."
-                                  data-max="2000"><?= e(post('deskripsi')) ?></textarea>
+                                  data-max="2000"><?= e(post('deskripsi', "1. LATAR BELAKANG\n(Jelaskan fenomena/masalah yang mendasari penelitian Anda)\n\n2. RUMUSAN MASALAH\n(Apa masalah utama yang ingin diselesaikan?)\n\n3. TUJUAN PENELITIAN\n(Apa yang ingin dicapai dari penelitian ini?)\n\n4. METODOLOGI\n(Metode/Algoritma apa yang digunakan? Bagaimana tahapannya?)")) ?></textarea>
                         <div class="form-text" id="deskripsi_counter">2000 karakter tersisa</div>
                     </div>
 
@@ -91,7 +91,9 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                             <label for="pembimbing_1_id" class="form-label">Usulan Pembimbing Utama</label>
                             <select class="form-select" id="pembimbing_1_id" name="pembimbing_1_id">
                                 <option value="">-- Pilih Pembimbing 1 --</option>
-                                <?php foreach ($listDosen as $d): ?>
+                                <?php foreach ($listDosen as $d): 
+                                    if (strcasecmp($d['jabatan_akademik'] ?? '', 'Asisten Ahli') === 0) continue; 
+                                ?>
                                 <option value="<?= $d['id'] ?>" <?= post('pembimbing_1_id') == $d['id'] ? 'selected' : '' ?>>
                                     <?= e($d['nama']) ?>
                                 </option>
@@ -130,6 +132,11 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                                 <br>
                                 <small class="text-muted">Maksimal 5MB, hanya format PDF</small>
                             </div>
+                        </div>
+                        <div class="mt-2">
+                            <a href="<?= APP_URL ?>/assets/templates/template_ringkasan_proposal.docx" class="btn btn-sm btn-outline-info">
+                                <i class="bi bi-file-earmark-word me-1"></i> Unduh Template Ringkasan Proposal (.docx)
+                            </a>
                         </div>
                         <input type="file" id="file_proposal" name="file_proposal"
                                class="d-none" accept=".pdf,application/pdf">

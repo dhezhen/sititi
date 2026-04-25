@@ -7,7 +7,7 @@ require BASE_PATH . '/views/layouts/header.php';
         <li class="breadcrumb-item"><a href="?page=dashboard">Dashboard</a></li>
         <li class="breadcrumb-item active">Tentukan Pembimbing</li>
     </ol></nav>
-    <h1><i class="bi bi-people-fill me-2 text-primary"></i>Penentuan Pembimbing Skripsi</h1>
+    <h1><i class="bi bi-people-fill me-2 text-primary"></i>Review & Penentuan Pembimbing Skripsi</h1>
 </div>
 <?php renderFlash(); ?>
 <div class="card mb-4">
@@ -58,7 +58,7 @@ require BASE_PATH . '/views/layouts/header.php';
                     <td>
                         <a href="?page=dewan.pembimbing&id=<?= $r['id'] ?>" class="btn btn-sm btn-primary">
                             <i class="bi bi-person-plus me-1"></i>
-                            <?= $r['status'] === 'pembimbing_ditentukan' ? 'Ubah' : 'Tentukan' ?>
+                            <?= $r['status'] === 'pembimbing_ditentukan' ? 'Ubah' : 'Review & Tentukan' ?>
                         </a>
                     </td>
                 </tr>

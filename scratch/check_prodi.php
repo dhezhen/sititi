@@ -1,6 +1,11 @@
 <?php
-require __DIR__ . '/../config/app.php';
-require __DIR__ . '/../config/database.php';
+require 'config/app.php';
+require 'config/database.php';
 $db = getDB();
-$stmt = $db->query("SELECT id, nama, kode FROM prodi ORDER BY nama ASC");
-print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
+$ade = $db->query("SELECT prodi_id FROM mahasiswa WHERE user_id = 30")->fetchColumn();
+echo "Prodi Ade: $ade\n";
+
+$kaprodiEmail = 'kaprodi@demo.com'; // Wait, let's check who the user is logged in as.
+// The user said "saya login sebagai kaprodi"
+$kaprodi = $db->query("SELECT prodi_id FROM dosen WHERE email LIKE '%kaprodi%'")->fetchColumn();
+echo "Prodi Kaprodi: $kaprodi\n";

@@ -103,6 +103,10 @@ class Pengajuan {
             $sql    .= " AND pj.periode_id = ?";
             $params[] = $filters['periode_id'];
         }
+        if (!empty($filters['prodi_id'])) {
+            $sql    .= " AND m.prodi_id = ?";
+            $params[] = $filters['prodi_id'];
+        }
 
         $sql .= " ORDER BY pj.created_at DESC LIMIT $perPage OFFSET $offset";
         $stmt = $this->db->prepare($sql);
@@ -129,6 +133,10 @@ class Pengajuan {
             $params[] = "%{$filters['search']}%";
             $params[] = "%{$filters['search']}%";
             $params[] = "%{$filters['search']}%";
+        }
+        if (!empty($filters['prodi_id'])) {
+            $sql    .= " AND m.prodi_id = ?";
+            $params[] = $filters['prodi_id'];
         }
 
         $stmt = $this->db->prepare($sql);

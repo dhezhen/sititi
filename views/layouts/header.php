@@ -102,6 +102,20 @@
                         <i class="bi bi-chevron-down small"></i>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
+                        <?php if (count(Auth::roles()) > 1): ?>
+                        <li class="dropdown-header text-uppercase small fw-bold text-primary">Ganti Peran Aktif</li>
+                        <?php foreach (Auth::roles() as $r): ?>
+                        <li>
+                            <a class="dropdown-item d-flex justify-content-between align-items-center <?= Auth::role() === $r ? 'active' : '' ?>" 
+                               href="?page=switch-role&role=<?= $r ?>">
+                                <?= ucfirst($r) ?>
+                                <?php if (Auth::role() === $r): ?><i class="bi bi-check2 ms-2"></i><?php endif; ?>
+                            </a>
+                        </li>
+                        <?php endforeach; ?>
+                        <li><hr class="dropdown-divider"></li>
+                        <?php endif; ?>
+
                         <li class="px-3 py-2">
                             <div class="fw-semibold"><?= e(Auth::user()['nama']) ?></div>
                             <div class="text-muted small"><?= e(Auth::user()['email']) ?></div>

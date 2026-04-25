@@ -431,6 +431,13 @@ class AdminController {
         $total = $this->dosenModel->count($search);
         $pages = (int)ceil($total / $perPage);
         $list  = $this->dosenModel->getAll(false, $search, $page, $perPage);
+        
+        // Ambil role untuk setiap dosen
+        $userModel = new User();
+        foreach ($list as &$r) {
+            $r['user_roles'] = $userModel->getRolesByEmail($r['email']);
+        }
+        
         $dosenModel = $this->dosenModel; // expose ke view
 
         // Ambil daftar prodi untuk dropdown
@@ -486,12 +493,20 @@ class AdminController {
             $db->beginTransaction();
             
             // Buat User untuk dosen
+            $roles = post('roles');
+            if (!is_array($roles) || empty($roles)) {
+                $roles = [post('role', ROLE_DOSEN)];
+            }
+
             $userId = $this->userModel->create([
                 'nama'     => $nama,
                 'email'    => $email,
                 'password' => $password,
-                'role'     => post('role', ROLE_DOSEN)
+                'role'     => $roles[0]
             ]);
+
+            // Simpan multiple roles
+            $this->userModel->setRoles($userId, $roles);
 
             // Karena role dewan sudah ada untuk mengurus pembimbing, kita set ke dewan atau biarkan null (but user table need role).
             // Actually, dosen in this system usually acts as Dewan or Kaprodi. Let's just set it to 'dosen' (even if not strictly in app.php, or use 'dewan').
@@ -583,18 +598,26 @@ class AdminController {
                     if (!empty($password)) {
                         $userData['password'] = $password;
                     }
-                    if (post('role')) {
-                        $userData['role'] = post('role');
-                    }
                     $this->userModel->update($userId, $userData);
+
+                    // Sync Multiple Roles
+                    $roles = post('roles');
+                    if (is_array($roles) && !empty($roles)) {
+                        $this->userModel->setRoles($userId, $roles);
+                    }
                 } elseif (!empty($password)) {
-                    // Buat user jika belum ada tapi dia masukin password
-                    $this->userModel->create([
+                    // Buat user jika belum ada
+                    $roles = post('roles');
+                    if (!is_array($roles) || empty($roles)) {
+                        $roles = [post('role', ROLE_DOSEN)];
+                    }
+                    $newUserId = $this->userModel->create([
                         'nama'     => $nama,
                         'email'    => $email,
                         'password' => $password,
-                        'role'     => post('role', ROLE_DOSEN)
+                        'role'     => $roles[0]
                     ]);
+                    $this->userModel->setRoles($newUserId, $roles);
                 }
 
             $this->dosenModel->update($id, [

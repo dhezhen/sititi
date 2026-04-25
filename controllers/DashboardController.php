@@ -62,10 +62,11 @@ class DashboardController {
             $workload = $dosenModel->getWorkloadByAngkatan($dosenId);
             
             $stmtB = $db->prepare("
-                SELECT p.*, m.nama AS nama_mahasiswa, m.nim, pb.jabatan
+                SELECT p.*, u.nama AS nama_mahasiswa, m.nim, pb.jabatan
                 FROM pembimbing pb
                 JOIN pengajuan_judul p ON p.id = pb.pengajuan_id
-                JOIN mahasiswa m ON m.user_id = p.mahasiswa_id
+                JOIN mahasiswa m ON m.user_id = p.user_id
+                JOIN users u ON u.id = m.user_id
                 WHERE pb.dosen_id = ?
                 ORDER BY p.created_at DESC
             ");
@@ -119,9 +120,10 @@ class DashboardController {
             GROUP BY m.angkatan
             ORDER BY m.angkatan DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
-        
+
+        // Statistik Beban Kerja Dosen
         $dosenModel = new Dosen();
-        $dosenWorkload = $dosenModel->getAllWorkload();
+        $workloadDosen = $dosenModel->getAllWorkloadGrouped();
 
         require BASE_PATH . '/views/dashboard/staff.php';
     }
@@ -164,8 +166,9 @@ class DashboardController {
             $angkatanStats = $stmtS->fetchAll(PDO::FETCH_ASSOC);
         }
 
+        // Statistik Beban Kerja Dosen
         $dosenModel = new Dosen();
-        $dosenWorkload = $dosenModel->getAllWorkload($prodiId);
+        $workloadDosen = $dosenModel->getAllWorkloadGrouped();
 
         require BASE_PATH . '/views/dashboard/kaprodi.php';
     }
@@ -207,6 +210,10 @@ class DashboardController {
             GROUP BY m.angkatan
             ORDER BY m.angkatan DESC
         ")->fetchAll(PDO::FETCH_ASSOC);
+
+        // Statistik Beban Kerja Dosen
+        $dosenModel = new Dosen();
+        $workloadDosen = $dosenModel->getAllWorkloadGrouped();
 
         $notifasi = (new Notifikasi())->getByUserId(Auth::id(), 5);
         require BASE_PATH . '/views/dashboard/superadmin.php';

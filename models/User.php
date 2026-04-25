@@ -113,6 +113,10 @@ class User {
             $fields[] = 'password = ?';
             $params[] = password_hash($data['password'], PASSWORD_BCRYPT);
         }
+        if (isset($data['role'])) {
+            $fields[] = 'role = ?';
+            $params[] = $data['role'];
+        }
         if (isset($data['is_active'])) {
             $fields[] = 'is_active = ?';
             $params[] = (int)$data['is_active'];
@@ -147,5 +151,60 @@ class User {
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int)$stmt->fetchColumn() > 0;
+    }
+    /**
+     * Ambil semua role user dari tabel user_roles
+     */
+    public function getRoles(int $userId): array {
+        $stmt = $this->db->prepare("SELECT role_kode FROM user_roles WHERE user_id = ?");
+        $stmt->execute([$userId]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Ambil roles berdasarkan email
+     */
+    public function getRolesByEmail(string $email): array {
+        $stmt = $this->db->prepare("
+            SELECT ur.role_kode 
+            FROM user_roles ur
+            JOIN users u ON u.id = ur.user_id
+            WHERE u.email = ?
+        ");
+        $stmt->execute([$email]);
+        return $stmt->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * Update (sync) role user
+     */
+    public function setRoles(int $userId, array $roles): void {
+        $db = getDB();
+        $inTransaction = $db->inTransaction();
+        
+        try {
+            if (!$inTransaction) $db->beginTransaction();
+            
+            // Hapus yang lama
+            $stmt = $db->prepare("DELETE FROM user_roles WHERE user_id = ?");
+            $stmt->execute([$userId]);
+
+            // Tambah yang baru
+            foreach ($roles as $role) {
+                $stmt = $db->prepare("INSERT INTO user_roles (user_id, role_kode) VALUES (?, ?)");
+                $stmt->execute([$userId, $role]);
+            }
+
+            // Update role utama di tabel users (untuk backward compatibility)
+            if (!empty($roles)) {
+                $stmt = $db->prepare("UPDATE users SET role = ? WHERE id = ?");
+                $stmt->execute([$roles[0], $userId]);
+            }
+
+            if (!$inTransaction) $db->commit();
+        } catch (Exception $e) {
+            if (!$inTransaction && $db->inTransaction()) $db->rollBack();
+            throw $e;
+        }
     }
 }

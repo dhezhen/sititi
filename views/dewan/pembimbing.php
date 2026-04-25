@@ -8,7 +8,7 @@ require BASE_PATH . '/views/layouts/header.php';
         <li class="breadcrumb-item"><a href="?page=dewan">Pembimbing</a></li>
         <li class="breadcrumb-item active">Tentukan Pembimbing</li>
     </ol></nav>
-    <h1><i class="bi bi-person-plus me-2 text-primary"></i>Tentukan Dosen Pembimbing</h1>
+    <h1><i class="bi bi-person-plus me-2 text-primary"></i>Review Proposal & Pembimbing</h1>
 </div>
 <?php renderFlash(); ?>
 <div class="row g-4">
@@ -42,7 +42,7 @@ require BASE_PATH . '/views/layouts/header.php';
 
         <!-- Form Pembimbing -->
         <div class="card border-primary">
-            <div class="card-header bg-primary text-white"><i class="bi bi-people-fill me-2"></i>Review & Penetapan Pembimbing</div>
+            <div class="card-header bg-primary text-white"><i class="bi bi-chat-text-fill me-2"></i>Review & Keputusan Dewan</div>
             <div class="card-body">
                 <?php
                 // Ambil usulan dari Kaprodi/Mahasiswa sebagai default
@@ -54,50 +54,20 @@ require BASE_PATH . '/views/layouts/header.php';
                     <input type="hidden" name="pengajuan_id" value="<?= $pengajuan['id'] ?>">
 
                     <div class="mb-4">
-                        <label for="dosen1_id" class="form-label fw-semibold">
-                            <span class="badge bg-primary me-1">Pembimbing 1</span> (Wajib)
-                        </label>
-                        <select class="form-select" id="dosen1_id" name="dosen1_id" required>
-                            <option value="">-- Pilih Dosen Pembimbing 1 --</option>
-                            <?php foreach ($listDosen as $d): 
-                                $isFull = ($d['workload'] ?? 0) >= MAX_PEMBIMBING_PER_ANGKATAN;
-                                $workloadText = ($d['workload'] ?? 0) . "/" . MAX_PEMBIMBING_PER_ANGKATAN;
-                            ?>
-                            <option value="<?= $d['id'] ?>"
-                                    <?= $def1 == $d['id'] ? 'selected' : '' ?>
-                                    <?= $isFull ? 'class="text-danger"' : '' ?>>
-                                <?= e($d['nama']) ?> 
-                                [<?= $workloadText ?>]
-                                — <?= e($d['jabatan_akademik'] ?? '-') ?>
-                                <?= $isFull ? ' (PENUH)' : '' ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="mb-4">
-                        <label for="dosen2_id" class="form-label fw-semibold">
-                            <span class="badge bg-secondary me-1">Pembimbing 2</span> (Opsional)
-                        </label>
-                        <select class="form-select" id="dosen2_id" name="dosen2_id">
-                            <option value="">-- Tidak Ada Pembimbing 2 --</option>
-                            <?php foreach ($listDosen as $d): 
-                                $isFull = ($d['workload'] ?? 0) >= MAX_PEMBIMBING_PER_ANGKATAN;
-                                $workloadText = ($d['workload'] ?? 0) . "/" . MAX_PEMBIMBING_PER_ANGKATAN;
-                            ?>
-                            <option value="<?= $d['id'] ?>"
-                                    <?= $def2 == $d['id'] ? 'selected' : '' ?>
-                                    <?= $isFull ? 'class="text-danger"' : '' ?>>
-                                <?= e($d['nama']) ?> 
-                                [<?= $workloadText ?>]
-                                — <?= e($d['jabatan_akademik'] ?? '-') ?>
-                                <?= $isFull ? ' (PENUH)' : '' ?>
-                            </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <div class="form-text mt-2 text-info small">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Dosen <strong>Asisten Ahli</strong> hanya dapat menjadi Pembimbing 2.
+                        <label class="form-label fw-semibold">Tindakan / Aksi <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-4">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="aksi" id="aksi_tetapkan" value="setujui" checked>
+                                <label class="form-check-label fw-semibold text-primary" for="aksi_tetapkan">
+                                    Setujui Proposal
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="aksi" id="aksi_revisi" value="revisi">
+                                <label class="form-check-label fw-semibold text-warning" for="aksi_revisi">
+                                    Kembalikan (Revisi Proposal)
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -107,9 +77,9 @@ require BASE_PATH . '/views/layouts/header.php';
                                   placeholder="Catatan untuk mahasiswa terkait pembimbing..."></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary px-4"
-                            data-confirm="Simpan penentuan pembimbing ini?">
-                        <i class="bi bi-save me-2"></i>Simpan Pembimbing
+                    <button type="submit" class="btn btn-primary px-4" id="btn-submit"
+                            data-confirm="Simpan keputusan ini?">
+                        <i class="bi bi-save me-2"></i>Simpan Keputusan
                     </button>
                 </form>
             </div>
@@ -120,7 +90,7 @@ require BASE_PATH . '/views/layouts/header.php';
         <!-- Pembimbing Aktif Saat Ini -->
         <?php if (!empty($pembimbingAktif)): ?>
         <div class="card mb-4">
-            <div class="card-header"><i class="bi bi-person-check me-2 text-success"></i>Pembimbing Saat Ini</div>
+            <div class="card-header"><i class="bi bi-person-check me-2 text-success"></i>Pembimbing yang Diusulkan Kaprodi</div>
             <div class="card-body">
                 <?php foreach ($pembimbingAktif as $pb): ?>
                 <div class="d-flex align-items-center gap-3 mb-3 p-3 rounded-3 border">
@@ -135,6 +105,10 @@ require BASE_PATH . '/views/layouts/header.php';
                 </div>
                 <?php endforeach; ?>
             </div>
+        </div>
+        <?php else: ?>
+        <div class="alert alert-warning small">
+            <i class="bi bi-exclamation-triangle me-1"></i>Kaprodi belum menetapkan pembimbing.
         </div>
         <?php endif; ?>
 
@@ -159,4 +133,42 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const aksiTetapkan = document.getElementById('aksi_tetapkan');
+    const aksiRevisi = document.getElementById('aksi_revisi');
+    const catatan = document.getElementById('catatan');
+    const btnSubmit = document.getElementById('btn-submit');
+
+    function toggleFields() {
+        if (aksiRevisi.checked) {
+            catatan.setAttribute('required', 'required');
+            
+            // Highlight catatan
+            catatan.placeholder = "Tuliskan komentar atau poin revisi untuk mahasiswa... (Wajib)";
+            
+            // Ganti warna tombol
+            btnSubmit.className = 'btn btn-warning px-4';
+            btnSubmit.innerHTML = '<i class="bi bi-arrow-return-left me-2"></i>Kembalikan untuk Revisi';
+        } else {
+            catatan.removeAttribute('required');
+            
+            // Reset catatan
+            catatan.placeholder = "Catatan tambahan untuk mahasiswa...";
+            
+            // Reset tombol
+            btnSubmit.className = 'btn btn-primary px-4';
+            btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Setujui Proposal';
+        }
+    }
+
+    aksiTetapkan.addEventListener('change', toggleFields);
+    aksiRevisi.addEventListener('change', toggleFields);
+    
+    // Initial state
+    toggleFields();
+});
+</script>
+
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>
