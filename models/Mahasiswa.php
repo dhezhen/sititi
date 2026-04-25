@@ -120,4 +120,12 @@ class Mahasiswa {
             $id,
         ]);
     }
+
+    /**
+     * Hapus profil mahasiswa
+     */
+    public function delete(int $id): bool {
+        $stmt = $this->db->prepare("DELETE FROM mahasiswa WHERE id = ?");
+        return $stmt->execute([$id]);
+    }
 }

@@ -11,9 +11,14 @@ require BASE_PATH . '/views/layouts/header.php';
         </ol></nav>
         <h1><i class="bi bi-people me-2 text-primary"></i>Data Mahasiswa</h1>
     </div>
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
-        <i class="bi bi-file-earmark-excel me-1"></i> Import Data
-    </button>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Manual
+        </button>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-file-earmark-excel me-1"></i> Import Data
+        </button>
+    </div>
 </div>
 
 <?php renderFlash(); ?>
@@ -37,6 +42,7 @@ require BASE_PATH . '/views/layouts/header.php';
                     <th>Program Studi</th>
                     <th>Angkatan</th>
                     <th>Status Akun</th>
+                    <th style="width:120px">Aksi</th>
                 </tr>
             </thead>
             <tbody>
@@ -62,7 +68,72 @@ require BASE_PATH . '/views/layouts/header.php';
                             <span class="badge bg-danger">Nonaktif</span>
                         <?php endif; ?>
                     </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#editModal<?= $r['id'] ?>" title="Edit Data">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <a href="?page=admin.mahasiswa.delete&id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-danger" data-confirm="Yakin ingin menghapus data mahasiswa ini secara permanen beserta akun loginnya?" title="Hapus Data">
+                            <i class="bi bi-trash"></i>
+                        </a>
+                    </td>
                 </tr>
+
+                <!-- Modal Edit -->
+                <div class="modal fade" id="editModal<?= $r['id'] ?>" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                      <form action="?page=admin.mahasiswa.update" method="POST">
+                        <?php csrfField(); ?>
+                        <input type="hidden" name="id" value="<?= $r['id'] ?>">
+                        <div class="modal-header">
+                          <h5 class="modal-title">Edit Mahasiswa</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
+                                    <input type="text" name="nama" class="form-control" value="<?= e($r['nama']) ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">NIM <span class="text-danger">*</span></label>
+                                    <input type="text" name="nim" class="form-control" value="<?= e($r['nim']) ?>" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Email (@uniku.ac.id) <span class="text-danger">*</span></label>
+                                    <input type="email" name="email" class="form-control" value="<?= e($r['email']) ?>" required pattern=".+@uniku\.ac\.id$" title="Email harus menggunakan domain @uniku.ac.id">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Password Login <span class="text-muted fw-normal">(Opsional)</span></label>
+                                    <input type="password" name="password" class="form-control" placeholder="Isi untuk mengubah password">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Angkatan <span class="text-danger">*</span></label>
+                                    <input type="number" name="angkatan" class="form-control" value="<?= e($r['angkatan']) ?>" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Semester <span class="text-danger">*</span></label>
+                                    <input type="number" name="semester" class="form-control" value="<?= e($r['semester']) ?>" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">No. Handphone</label>
+                                    <input type="text" name="no_hp" class="form-control" value="<?= e($r['no_hp'] ?? '') ?>">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Alamat Lengkap</label>
+                                    <textarea name="alamat" class="form-control" rows="2"><?= e($r['alamat'] ?? '') ?></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Simpan Perubahan</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+
                 <?php endforeach; ?>
                 <?php endif; ?>
             </tbody>
@@ -87,7 +158,7 @@ require BASE_PATH . '/views/layouts/header.php';
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
-      <form action="?page=admin.import_mahasiswa" method="POST" enctype="multipart/form-data">
+      <form action="?page=admin.mahasiswa.import" method="POST" enctype="multipart/form-data">
         <?php csrfField(); ?>
         <div class="modal-header">
           <h5 class="modal-title" id="importModalLabel">Import Data Mahasiswa</h5>
@@ -111,6 +182,61 @@ require BASE_PATH . '/views/layouts/header.php';
         <div class="modal-footer d-flex justify-content-between">
             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
             <button type="submit" class="btn btn-success"><i class="bi bi-upload me-1"></i> Import Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Create Manual -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form action="?page=admin.mahasiswa.store" method="POST">
+        <?php csrfField(); ?>
+        <div class="modal-header">
+          <h5 class="modal-title">Tambah Mahasiswa Manual</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nama Lengkap</label>
+                    <input type="text" name="nama" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">NIM</label>
+                    <input type="text" name="nim" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email (@uniku.ac.id)</label>
+                    <input type="email" name="email" class="form-control" required pattern=".+@uniku\.ac\.id$" title="Email harus menggunakan domain @uniku.ac.id">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Password Login</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Angkatan</label>
+                    <input type="number" name="angkatan" class="form-control" value="<?= date('Y') ?>">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Semester</label>
+                    <input type="number" name="semester" class="form-control" value="1">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">No. Handphone</label>
+                    <input type="text" name="no_hp" class="form-control">
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Alamat Lengkap</label>
+                    <textarea name="alamat" class="form-control" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Simpan Data</button>
         </div>
       </form>
     </div>

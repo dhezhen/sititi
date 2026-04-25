@@ -19,111 +19,48 @@ $currentPage = get('page', 'dashboard');
             <span>Dashboard</span>
         </a>
 
-        <?php if ($role === ROLE_MAHASISWA): ?>
-        <!-- ===== MENU MAHASISWA ===== -->
-        <div class="sidebar-header mt-3"><span class="sidebar-label">PENGAJUAN</span></div>
+        <?php
+        $db = getDB();
+        // Ambil menu yang diizinkan untuk role saat ini, urutkan berdasarkan 'urutan'
+        if ($role === ROLE_SUPERADMIN) {
+            $stmt = $db->query("SELECT * FROM menus ORDER BY urutan ASC");
+            $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $stmt = $db->prepare("
+                SELECT m.* FROM menus m
+                JOIN role_menus rm ON m.id = rm.menu_id
+                JOIN roles r ON rm.role_id = r.id
+                WHERE r.kode = ?
+                ORDER BY m.urutan ASC
+            ");
+            $stmt->execute([$role]);
+            $menus = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        }
 
-        <a href="?page=pengajuan"
-           class="sidebar-item <?= $currentPage === 'pengajuan' ? 'active' : '' ?>">
-            <i class="bi bi-file-earmark-text"></i>
-            <span>Daftar Pengajuan</span>
+        if (!empty($menus)):
+        ?>
+        <div class="sidebar-header mt-3"><span class="sidebar-label">MENU AKSES</span></div>
+        <?php foreach ($menus as $m): 
+            // Cek active state
+            // Jika $currentPage sama persis dengan $m['kode_page'], active
+            // Atau jika startswith (untuk sub-page seperti pengajuan.create vs pengajuan)
+            $isActive = ($currentPage === $m['kode_page']) || (str_starts_with($currentPage, $m['kode_page'].'.'));
+        ?>
+        <a href="?page=<?= $m['kode_page'] ?>"
+           class="sidebar-item <?= $isActive ? 'active' : '' ?>">
+            <i class="<?= e($m['icon']) ?>"></i>
+            <span><?= e($m['judul']) ?></span>
         </a>
-        <a href="?page=pengajuan.create"
-           class="sidebar-item <?= $currentPage === 'pengajuan.create' ? 'active' : '' ?>">
-            <i class="bi bi-plus-circle"></i>
-            <span>Buat Pengajuan</span>
-        </a>
+        <?php endforeach; ?>
+        <?php endif; ?>
 
+        <!-- Profil Saya (selalu ada, bukan dinamis) -->
         <div class="sidebar-header mt-3"><span class="sidebar-label">AKUN</span></div>
         <a href="?page=profil"
            class="sidebar-item <?= $currentPage === 'profil' ? 'active' : '' ?>">
             <i class="bi bi-person-circle"></i>
             <span>Profil Saya</span>
         </a>
-
-        <?php elseif ($role === ROLE_STAFF): ?>
-        <!-- ===== MENU STAFF ===== -->
-        <div class="sidebar-header mt-3"><span class="sidebar-label">VERIFIKASI</span></div>
-
-        <a href="?page=staff"
-           class="sidebar-item <?= str_starts_with($currentPage, 'staff') ? 'active' : '' ?>">
-            <i class="bi bi-clipboard-check"></i>
-            <span>Verifikasi Berkas</span>
-        </a>
-        <a href="?page=staff&status=diverifikasi"
-           class="sidebar-item">
-            <i class="bi bi-check-circle"></i>
-            <span>Sudah Diverifikasi</span>
-        </a>
-
-        <div class="sidebar-header mt-3"><span class="sidebar-label">DATA MASTER</span></div>
-        <a href="?page=admin.mahasiswa"
-           class="sidebar-item <?= $currentPage === 'admin.mahasiswa' ? 'active' : '' ?>">
-            <i class="bi bi-people"></i>
-            <span>Data Mahasiswa</span>
-        </a>
-        <a href="?page=admin.dosen"
-           class="sidebar-item <?= $currentPage === 'admin.dosen' ? 'active' : '' ?>">
-            <i class="bi bi-person-badge"></i>
-            <span>Data Dosen</span>
-        </a>
-
-        <?php elseif ($role === ROLE_KAPRODI): ?>
-        <!-- ===== MENU KAPRODI ===== -->
-        <div class="sidebar-header mt-3"><span class="sidebar-label">REVIEW</span></div>
-
-        <a href="?page=kaprodi"
-           class="sidebar-item <?= str_starts_with($currentPage, 'kaprodi') ? 'active' : '' ?>">
-            <i class="bi bi-eye"></i>
-            <span>Review Pengajuan</span>
-        </a>
-        <a href="?page=kaprodi&status=disetujui"
-           class="sidebar-item">
-            <i class="bi bi-patch-check"></i>
-            <span>Telah Disetujui</span>
-        </a>
-        <a href="?page=kaprodi&status=ditolak"
-           class="sidebar-item">
-            <i class="bi bi-x-circle"></i>
-            <span>Ditolak</span>
-        </a>
-
-        <div class="sidebar-header mt-3"><span class="sidebar-label">DATA MASTER</span></div>
-        <a href="?page=admin.dosen"
-           class="sidebar-item <?= $currentPage === 'admin.dosen' ? 'active' : '' ?>">
-            <i class="bi bi-person-badge"></i>
-            <span>Data Dosen</span>
-        </a>
-        <a href="?page=admin.periode"
-           class="sidebar-item <?= $currentPage === 'admin.periode' ? 'active' : '' ?>">
-            <i class="bi bi-calendar3"></i>
-            <span>Periode</span>
-        </a>
-
-        <?php elseif ($role === ROLE_DEWAN): ?>
-        <!-- ===== MENU DEWAN ===== -->
-        <div class="sidebar-header mt-3"><span class="sidebar-label">BIMBINGAN</span></div>
-
-        <a href="?page=dewan"
-           class="sidebar-item <?= str_starts_with($currentPage, 'dewan') ? 'active' : '' ?>">
-            <i class="bi bi-people-fill"></i>
-            <span>Tentukan Pembimbing</span>
-        </a>
-        <a href="?page=dewan&status=pembimbing_ditentukan"
-           class="sidebar-item">
-            <i class="bi bi-check2-all"></i>
-            <span>Sudah Ada Pembimbing</span>
-        </a>
-
-        <div class="sidebar-header mt-3"><span class="sidebar-label">DATA MASTER</span></div>
-        <a href="?page=admin.dosen"
-           class="sidebar-item <?= $currentPage === 'admin.dosen' ? 'active' : '' ?>">
-            <i class="bi bi-person-badge"></i>
-            <span>Data Dosen</span>
-        </a>
-        <?php endif; ?>
-
-        <!-- Notifikasi selalu tampil -->
         <div class="sidebar-header mt-3"><span class="sidebar-label">LAINNYA</span></div>
         <?php $unread = countUnreadNotif(); ?>
         <a href="?page=notif"

@@ -25,6 +25,7 @@ define('ROLE_MAHASISWA',  'mahasiswa');
 define('ROLE_STAFF',      'staff');
 define('ROLE_KAPRODI',    'kaprodi');
 define('ROLE_DEWAN',      'dewan');
+define('ROLE_SUPERADMIN', 'superadmin');
 
 // Status alur pengajuan
 define('STATUS_DRAFT',        'draft');

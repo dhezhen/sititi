@@ -18,7 +18,7 @@ require_once __DIR__ . '/core/Helper.php';
 // ── Autoload Models ──────────────────────────────────────────
 $modelFiles = [
     'User', 'Mahasiswa', 'Dosen', 'Pengajuan',
-    'Pembimbing', 'StatusLog', 'Notifikasi',
+    'Pembimbing', 'StatusLog', 'Notifikasi', 'Periode'
 ];
 foreach ($modelFiles as $model) {
     require_once __DIR__ . "/models/{$model}.php";
@@ -28,6 +28,7 @@ foreach ($modelFiles as $model) {
 $controllerFiles = [
     'AuthController', 'DashboardController', 'PengajuanController',
     'StaffController', 'KaprodiController', 'DewanController', 'AdminController', 'AccountController',
+    'SuperadminController'
 ];
 foreach ($controllerFiles as $ctrl) {
     require_once __DIR__ . "/controllers/{$ctrl}.php";
@@ -44,6 +45,11 @@ $publicPages = ['login', 'login.post'];
 
 if (!in_array($page, $publicPages) && !Auth::check()) {
     redirect('?page=login');
+}
+
+// Cek hak akses dinamis (berdasarkan tabel menus dan role_menus)
+if (!in_array($page, $publicPages)) {
+    Auth::requireMenuAccess($page);
 }
 
 // ── Dispatch ke controller yang sesuai ───────────────────────
@@ -159,7 +165,19 @@ switch ($page) {
         (new AdminController())->mahasiswa();
         break;
 
-    case 'admin.import_mahasiswa':
+    case 'admin.mahasiswa.store':
+        (new AdminController())->mahasiswaStore();
+        break;
+
+    case 'admin.mahasiswa.update':
+        (new AdminController())->mahasiswaUpdate();
+        break;
+
+    case 'admin.mahasiswa.delete':
+        (new AdminController())->mahasiswaDelete();
+        break;
+
+    case 'admin.mahasiswa.import':
         (new AdminController())->importMahasiswa();
         break;
 
@@ -167,7 +185,19 @@ switch ($page) {
         (new AdminController())->dosen();
         break;
 
-    case 'admin.import_dosen':
+    case 'admin.dosen.store':
+        (new AdminController())->dosenStore();
+        break;
+
+    case 'admin.dosen.update':
+        (new AdminController())->dosenUpdate();
+        break;
+
+    case 'admin.dosen.delete':
+        (new AdminController())->dosenDelete();
+        break;
+
+    case 'admin.dosen.import':
         (new AdminController())->importDosen();
         break;
 
@@ -189,6 +219,39 @@ switch ($page) {
 
     case 'admin.periode.delete':
         (new AdminController())->periodeDelete();
+        break;
+
+    // ── SUPER ADMIN ───────────────────────────────────────────
+    case 'superadmin.roles':
+        (new SuperadminController())->roles();
+        break;
+
+    case 'superadmin.roles.store':
+        (new SuperadminController())->roleStore();
+        break;
+
+    case 'superadmin.roles.delete':
+        (new SuperadminController())->roleDelete();
+        break;
+
+    case 'superadmin.menus':
+        (new SuperadminController())->menus();
+        break;
+
+    case 'superadmin.menus.store':
+        (new SuperadminController())->menuStore();
+        break;
+
+    case 'superadmin.menus.delete':
+        (new SuperadminController())->menuDelete();
+        break;
+
+    case 'superadmin.role_menus':
+        (new SuperadminController())->roleMenus();
+        break;
+
+    case 'superadmin.role_menus.update':
+        (new SuperadminController())->roleMenusUpdate();
         break;
 
     // ── NOTIFIKASI ────────────────────────────────────────────

@@ -34,6 +34,161 @@ class AdminController {
         require BASE_PATH . '/views/admin/mahasiswa/index.php';
     }
 
+    public function mahasiswaStore(): void {
+        Auth::requireRole(ROLE_STAFF);
+
+        if (!isPost()) redirect('?page=admin.mahasiswa');
+        verifyCsrf();
+
+        $nama     = trim(post('nama'));
+        $email    = trim(post('email'));
+        $password = post('password');
+        $nim      = trim(post('nim'));
+        $angkatan = trim(post('angkatan'));
+        $semester = trim(post('semester'));
+        $prodi_id = post('prodi_id');
+        $no_hp    = trim(post('no_hp'));
+        $alamat   = trim(post('alamat'));
+
+        $errors = [];
+        if (empty($nama) || empty($email) || empty($password) || empty($nim)) {
+            $errors[] = 'Nama, Email, Password, dan NIM wajib diisi.';
+        }
+        
+        if (!str_ends_with($email, '@uniku.ac.id')) {
+            $errors[] = 'Email wajib menggunakan domain @uniku.ac.id';
+        }
+
+        if ($this->userModel->emailExists($email)) {
+            $errors[] = 'Email sudah terdaftar.';
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('?page=admin.mahasiswa');
+        }
+
+        $db = getDB();
+        try {
+            $db->beginTransaction();
+            
+            $userId = $this->userModel->create([
+                'nama'     => $nama,
+                'email'    => $email,
+                'password' => $password,
+                'role'     => ROLE_MAHASISWA
+            ]);
+
+            $this->mhsModel->create([
+                'user_id'  => $userId,
+                'nim'      => $nim,
+                'angkatan' => $angkatan ?: date('Y'),
+                'semester' => $semester ?: 1,
+                'prodi_id' => $prodi_id ?: null,
+                'no_hp'    => $no_hp,
+                'alamat'   => $alamat
+            ]);
+
+            $db->commit();
+            setFlash('success', 'Data Mahasiswa berhasil ditambahkan.');
+        } catch (Exception $e) {
+            $db->rollBack();
+            setFlash('danger', 'Gagal menambahkan data mahasiswa.');
+        }
+
+        redirect('?page=admin.mahasiswa');
+    }
+
+    public function mahasiswaUpdate(): void {
+        Auth::requireRole(ROLE_STAFF);
+        if (!isPost()) redirect('?page=admin.mahasiswa');
+        verifyCsrf();
+
+        $id       = (int)post('id');
+        $nama     = trim(post('nama'));
+        $email    = trim(post('email'));
+        $password = post('password');
+        $nim      = trim(post('nim'));
+        $angkatan = trim(post('angkatan'));
+        $semester = trim(post('semester'));
+        $prodi_id = post('prodi_id');
+        $no_hp    = trim(post('no_hp'));
+        $alamat   = trim(post('alamat'));
+
+        $mhs = $this->mhsModel->findById($id);
+        if (!$mhs) {
+            setFlash('danger', 'Mahasiswa tidak ditemukan.');
+            redirect('?page=admin.mahasiswa');
+        }
+
+        $errors = [];
+        if (empty($nama) || empty($email) || empty($nim)) {
+            $errors[] = 'Nama, Email, dan NIM wajib diisi.';
+        }
+        
+        if (!str_ends_with($email, '@uniku.ac.id')) {
+            $errors[] = 'Email wajib menggunakan domain @uniku.ac.id';
+        }
+
+        if ($this->userModel->emailExists($email, $mhs['user_id'])) {
+            $errors[] = 'Email sudah terdaftar pada user lain.';
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('?page=admin.mahasiswa');
+        }
+
+        $db = getDB();
+        try {
+            $db->beginTransaction();
+            
+            // Update User
+            $userData = ['nama' => $nama, 'email' => $email];
+            if (!empty($password)) {
+                $userData['password'] = $password;
+            }
+            $this->userModel->update($mhs['user_id'], $userData);
+
+            // Update Mahasiswa
+            $this->mhsModel->update($id, [
+                'nim'      => $nim,
+                'angkatan' => $angkatan ?: date('Y'),
+                'semester' => $semester ?: 1,
+                'prodi_id' => $prodi_id ?: null,
+                'no_hp'    => $no_hp,
+                'alamat'   => $alamat
+            ]);
+
+            $db->commit();
+            setFlash('success', 'Data Mahasiswa berhasil diperbarui.');
+        } catch (Exception $e) {
+            $db->rollBack();
+            setFlash('danger', 'Gagal memperbarui data mahasiswa.');
+        }
+
+        redirect('?page=admin.mahasiswa');
+    }
+
+    public function mahasiswaDelete(): void {
+        Auth::requireRole(ROLE_STAFF);
+        $id = (int)get('id');
+        
+        $mhs = $this->mhsModel->findById($id);
+        if ($mhs) {
+            try {
+                // Delete user (akan otomatis cascade delete mahasiswa jika constraint di-set, 
+                // tapi kita panggil manual untuk aman jika strict)
+                $this->userModel->delete($mhs['user_id']);
+                setFlash('success', 'Data Mahasiswa dan akun login berhasil dihapus.');
+            } catch (Exception $e) {
+                // Jika foreign key constraint gagal (misal sudah ada pengajuan)
+                setFlash('danger', 'Data Mahasiswa tidak dapat dihapus karena sudah berelasi dengan data lain (misalnya Pengajuan Skripsi).');
+            }
+        }
+        redirect('?page=admin.mahasiswa');
+    }
+
     public function importMahasiswa(): void {
         Auth::requireRole(ROLE_STAFF);
 
@@ -71,6 +226,11 @@ class AdminController {
             $alamat   = trim($row[7] ?? '');
 
             if (empty($nama) || empty($email) || empty($nim)) {
+                $failed++;
+                continue;
+            }
+
+            if (!str_ends_with($email, '@uniku.ac.id')) {
                 $failed++;
                 continue;
             }
@@ -144,6 +304,204 @@ class AdminController {
         require BASE_PATH . '/views/admin/dosen/index.php';
     }
 
+    public function dosenStore(): void {
+        Auth::requireRole(ROLE_STAFF);
+
+        if (!isPost()) redirect('?page=admin.dosen');
+        verifyCsrf();
+
+        $nama     = trim(post('nama'));
+        $email    = trim(post('email'));
+        $password = post('password');
+        $nidn     = trim(post('nidn'));
+        $prodi_id = post('prodi_id');
+        $bidang   = trim(post('bidang_keahlian'));
+        $no_hp    = trim(post('no_hp'));
+
+        $errors = [];
+        if (empty($nama) || empty($email) || empty($password) || empty($nidn)) {
+            $errors[] = 'Nama, Email, Password, dan NIDN wajib diisi.';
+        }
+        
+        if (!str_ends_with($email, '@uniku.ac.id')) {
+            $errors[] = 'Email wajib menggunakan domain @uniku.ac.id';
+        }
+
+        if ($this->userModel->emailExists($email)) {
+            $errors[] = 'Email sudah terdaftar pada user lain.';
+        }
+
+        // Cek NIDN duplikat
+        $db = getDB();
+        $stmt = $db->prepare("SELECT id FROM dosen WHERE nidn = ?");
+        $stmt->execute([$nidn]);
+        if ($stmt->fetchColumn()) {
+            $errors[] = 'NIDN sudah terdaftar pada dosen lain.';
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('?page=admin.dosen');
+        }
+
+        try {
+            $db->beginTransaction();
+            
+            // Buat User untuk dosen
+            $userId = $this->userModel->create([
+                'nama'     => $nama,
+                'email'    => $email,
+                'password' => $password,
+                'role'     => ROLE_DEWAN // Atau buat role DOSEN baru jika diperlukan, tapi defaultnya bisa dewan atau direview saja
+            ]);
+
+            // Karena role dewan sudah ada untuk mengurus pembimbing, kita set ke dewan atau biarkan null (but user table need role).
+            // Actually, dosen in this system usually acts as Dewan or Kaprodi. Let's just set it to 'dosen' (even if not strictly in app.php, or use 'dewan').
+            // Wait, looking at app.php, there's no ROLE_DOSEN. We will set role to 'dewan' as a placeholder or we can just update userModel if needed.
+            // Let's check `User.php` role enum if it exists. No enum. We'll set role as 'dewan' so they can login. Or just don't create user if not requested? "termasuk password untuk masuk... dosen mahasiswa staff". Let's use 'dewan' for dosen if they don't have a specific role, or let's just make it 'dosen'.
+            
+            $this->dosenModel->create([
+                'nama'            => $nama,
+                'nidn'            => $nidn,
+                'email'           => $email,
+                'prodi_id'        => $prodi_id ?: null,
+                'bidang_keahlian' => $bidang,
+                'no_hp'           => $no_hp
+            ]);
+
+            $db->commit();
+            setFlash('success', 'Data Dosen berhasil ditambahkan.');
+        } catch (Exception $e) {
+            $db->rollBack();
+            setFlash('danger', 'Gagal menambahkan data dosen.');
+        }
+
+        redirect('?page=admin.dosen');
+    }
+
+    public function dosenUpdate(): void {
+        Auth::requireRole(ROLE_STAFF);
+        if (!isPost()) redirect('?page=admin.dosen');
+        verifyCsrf();
+
+        $id       = (int)post('id');
+        $nama     = trim(post('nama'));
+        $email    = trim(post('email'));
+        $password = post('password');
+        $nidn     = trim(post('nidn'));
+        $prodi_id = post('prodi_id');
+        $bidang   = trim(post('bidang_keahlian'));
+        $no_hp    = trim(post('no_hp'));
+
+        $dosen = $this->dosenModel->findById($id);
+        if (!$dosen) {
+            setFlash('danger', 'Dosen tidak ditemukan.');
+            redirect('?page=admin.dosen');
+        }
+
+        $errors = [];
+        if (empty($nama) || empty($email) || empty($nidn)) {
+            $errors[] = 'Nama, Email, dan NIDN wajib diisi.';
+        }
+        
+        if (!str_ends_with($email, '@uniku.ac.id')) {
+            $errors[] = 'Email wajib menggunakan domain @uniku.ac.id';
+        }
+
+        $db = getDB();
+        // Cek NIDN duplikat
+        $stmt = $db->prepare("SELECT id FROM dosen WHERE nidn = ? AND id != ?");
+        $stmt->execute([$nidn, $id]);
+        if ($stmt->fetchColumn()) {
+            $errors[] = 'NIDN sudah terdaftar pada dosen lain.';
+        }
+
+        // Cari user yang emailnya cocok dengan dosen sebelumnya
+        $stmtUser = $db->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+        $stmtUser->execute([$dosen['email']]);
+        $userId = $stmtUser->fetchColumn();
+
+        if ($userId && $this->userModel->emailExists($email, $userId)) {
+            $errors[] = 'Email sudah terdaftar pada user lain.';
+        } elseif (!$userId && $this->userModel->emailExists($email)) {
+            $errors[] = 'Email sudah terdaftar pada user lain.';
+        }
+
+        if (!empty($errors)) {
+            setFlash('danger', implode('<br>', $errors));
+            redirect('?page=admin.dosen');
+        }
+
+        try {
+            $db->beginTransaction();
+
+            if ($userId) {
+                // Update User
+                $userData = ['nama' => $nama, 'email' => $email];
+                if (!empty($password)) {
+                    $userData['password'] = $password;
+                }
+                $this->userModel->update($userId, $userData);
+            } elseif (!empty($password)) {
+                // Buat user jika belum ada tapi dia masukin password
+                $this->userModel->create([
+                    'nama'     => $nama,
+                    'email'    => $email,
+                    'password' => $password,
+                    'role'     => ROLE_DEWAN
+                ]);
+            }
+
+            $this->dosenModel->update($id, [
+                'nama'            => $nama,
+                'nidn'            => $nidn,
+                'email'           => $email,
+                'prodi_id'        => $prodi_id ?: null,
+                'bidang_keahlian' => $bidang,
+                'no_hp'           => $no_hp
+            ]);
+
+            $db->commit();
+            setFlash('success', 'Data Dosen berhasil diperbarui.');
+        } catch (Exception $e) {
+            $db->rollBack();
+            setFlash('danger', 'Gagal memperbarui data dosen.');
+        }
+
+        redirect('?page=admin.dosen');
+    }
+
+    public function dosenDelete(): void {
+        Auth::requireRole(ROLE_STAFF);
+        $id = (int)get('id');
+        
+        $dosen = $this->dosenModel->findById($id);
+        if ($dosen) {
+            $db = getDB();
+            try {
+                $db->beginTransaction();
+                
+                // Cari User ID
+                $stmt = $db->prepare("SELECT id FROM users WHERE email = ? LIMIT 1");
+                $stmt->execute([$dosen['email']]);
+                $userId = $stmt->fetchColumn();
+
+                $this->dosenModel->delete($id);
+
+                if ($userId) {
+                    $this->userModel->delete($userId);
+                }
+                
+                $db->commit();
+                setFlash('success', 'Data Dosen berhasil dihapus.');
+            } catch (Exception $e) {
+                $db->rollBack();
+                setFlash('danger', 'Data Dosen tidak dapat dihapus karena sudah berelasi dengan data lain.');
+            }
+        }
+        redirect('?page=admin.dosen');
+    }
+
     public function importDosen(): void {
         Auth::requireRole(ROLE_STAFF);
 
@@ -179,6 +537,11 @@ class AdminController {
             $no_hp    = trim($row[5] ?? '');
 
             if (empty($nama) || empty($nidn)) {
+                $failed++;
+                continue;
+            }
+
+            if (!empty($email) && !str_ends_with($email, '@uniku.ac.id')) {
                 $failed++;
                 continue;
             }

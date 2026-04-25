@@ -109,15 +109,78 @@ class Auth {
     }
 
     /**
+     * Mengecek apakah user yang sedang login memiliki akses ke suatu page (menu)
+     */
+    public static function hasMenuAccess(string $page): bool {
+        if (!self::check()) return false;
+        
+        // Superadmin bypass
+        if (self::role() === ROLE_SUPERADMIN) return true;
+
+        $db = getDB();
+        
+        // Cek apakah $page ini ada di tabel menus
+        // Karena ada sub-page seperti 'admin.mahasiswa.store', kita perlu mengambil prefix utamanya.
+        // Asumsi: jika prefix utamanya ada di database, kita cek izinnya.
+        // Misal: $page = 'admin.mahasiswa.store', kita split '.' menjadi 'admin.mahasiswa'.
+        // Namun, beberapa $page memang 3 segment. Lebih aman kita cek exact $page dulu.
+        // Jika tidak ada, kita coba cek 2 segment pertamanya, lalu 1 segment.
+
+        $segments = explode('.', $page);
+        $checkPages = [$page];
+        if (count($segments) == 3) {
+            $checkPages[] = $segments[0] . '.' . $segments[1];
+        }
+        $checkPages[] = $segments[0];
+
+        // Cari menu_id dari database yang paling spesifik
+        $menuId = null;
+        foreach ($checkPages as $cp) {
+            $stmt = $db->prepare("SELECT id FROM menus WHERE kode_page = ?");
+            $stmt->execute([$cp]);
+            $menuId = $stmt->fetchColumn();
+            if ($menuId) break;
+        }
+
+        // Jika page ini tidak diregistrasi di tabel menus, defaultnya kita izinkan? 
+        // Lebih baik kita block jika tidak di-handle di tabel menus?
+        // Tapi ada page seperti 'profil' yang tidak ada di menus.
+        // Sebaiknya, jika TIDAK ADA di menus, artinya bukan menu dinamis, akses dilanjutkan (atau di-handle oleh Controller masing-masing).
+        if (!$menuId) {
+            return true;
+        }
+
+        // Cek tabel role_menus
+        $stmt = $db->prepare("
+            SELECT 1 FROM role_menus rm 
+            JOIN roles r ON rm.role_id = r.id 
+            WHERE r.kode = ? AND rm.menu_id = ?
+        ");
+        $stmt->execute([self::role(), $menuId]);
+        return (bool)$stmt->fetchColumn();
+    }
+
+    /**
+     * Paksa akses berdasarkan menu dinamis
+     */
+    public static function requireMenuAccess(string $page): void {
+        self::requireLogin();
+        if (!self::hasMenuAccess($page)) {
+            redirect('?page=403');
+        }
+    }
+
+    /**
      * Redirect ke dashboard sesuai role
      */
     public static function redirectToDashboard(): void {
         $role = self::role();
         $pages = [
-            ROLE_MAHASISWA => '?page=dashboard',
-            ROLE_STAFF     => '?page=dashboard',
-            ROLE_KAPRODI   => '?page=dashboard',
-            ROLE_DEWAN     => '?page=dashboard',
+            ROLE_MAHASISWA  => '?page=dashboard',
+            ROLE_STAFF      => '?page=dashboard',
+            ROLE_KAPRODI    => '?page=dashboard',
+            ROLE_DEWAN      => '?page=dashboard',
+            ROLE_SUPERADMIN => '?page=dashboard',
         ];
         redirect($pages[$role] ?? '?page=dashboard');
     }

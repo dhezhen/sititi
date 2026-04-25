@@ -15,7 +15,9 @@ class AccountController {
     public function profil(): void {
         Auth::requireLogin();
         
-        $user = Auth::user();
+        $user = $this->userModel->findById(Auth::id());
+        if (!$user) redirect('?page=logout');
+        
         require BASE_PATH . '/views/account/profil.php';
     }
 
@@ -36,6 +38,7 @@ class AccountController {
         if (empty($nama)) $errors[] = 'Nama wajib diisi.';
         if (empty($email)) $errors[] = 'Email wajib diisi.';
         elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Format email tidak valid.';
+        elseif (!str_ends_with($email, '@uniku.ac.id')) $errors[] = 'Email wajib menggunakan domain @uniku.ac.id.';
         
         // Cek email duplikat
         if ($this->userModel->emailExists($email, $id)) {

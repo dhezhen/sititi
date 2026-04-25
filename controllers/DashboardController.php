@@ -27,6 +27,9 @@ class DashboardController {
             case ROLE_DEWAN:
                 $this->dewanDashboard();
                 break;
+            case ROLE_SUPERADMIN:
+                $this->superadminDashboard();
+                break;
             default:
                 redirect('?page=403');
         }
@@ -93,5 +96,20 @@ class DashboardController {
         $notifasi   = (new Notifikasi())->getByUserId(Auth::id(), 5);
 
         require BASE_PATH . '/views/dashboard/dewan.php';
+    }
+
+    /**
+     * Dashboard Super Admin
+     */
+    private function superadminDashboard(): void {
+        $db = getDB();
+        $stats = [
+            'users' => $db->query("SELECT COUNT(*) FROM users")->fetchColumn(),
+            'roles' => $db->query("SELECT COUNT(*) FROM roles")->fetchColumn(),
+            'menus' => $db->query("SELECT COUNT(*) FROM menus")->fetchColumn(),
+        ];
+        
+        $notifasi = (new Notifikasi())->getByUserId(Auth::id(), 5);
+        require BASE_PATH . '/views/dashboard/superadmin.php';
     }
 }

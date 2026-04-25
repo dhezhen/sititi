@@ -11,9 +11,14 @@ require BASE_PATH . '/views/layouts/header.php';
         </ol></nav>
         <h1><i class="bi bi-person-badge me-2 text-primary"></i>Data Dosen</h1>
     </div>
-    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
-        <i class="bi bi-file-earmark-excel me-1"></i> Import Data
-    </button>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModal">
+            <i class="bi bi-plus-circle me-1"></i> Tambah Manual
+        </button>
+        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+            <i class="bi bi-file-earmark-excel me-1"></i> Import Data
+        </button>
+    </div>
 </div>
 
 <?php renderFlash(); ?>
@@ -113,6 +118,53 @@ require BASE_PATH . '/views/layouts/header.php';
         <div class="modal-footer d-flex justify-content-between">
             <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
             <button type="submit" class="btn btn-success"><i class="bi bi-upload me-1"></i> Import Data</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Create Manual -->
+<div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form action="?page=admin.dosen.store" method="POST">
+        <?php csrfField(); ?>
+        <div class="modal-header">
+          <h5 class="modal-title">Tambah Dosen Manual</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nama Lengkap (beserta Gelar)</label>
+                    <input type="text" name="nama" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">NIDN</label>
+                    <input type="text" name="nidn" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Email (@uniku.ac.id)</label>
+                    <input type="email" name="email" class="form-control" required pattern=".+@uniku\.ac\.id$" title="Email harus menggunakan domain @uniku.ac.id">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Password Login</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Bidang Keahlian</label>
+                    <input type="text" name="bidang_keahlian" class="form-control">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">No. Handphone</label>
+                    <input type="text" name="no_hp" class="form-control">
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+            <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Simpan Data</button>
         </div>
       </form>
     </div>
