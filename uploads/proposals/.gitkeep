@@ -1,0 +1,3 @@
+# Folder ini digunakan untuk menyimpan file proposal PDF yang diupload mahasiswa.
+# Pastikan folder ini memiliki izin tulis (writable) oleh web server.
+# Di Linux: chmod 755 uploads/proposals

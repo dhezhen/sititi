@@ -1,0 +1,186 @@
+<?php
+/**
+ * ============================================================
+ * SiTiTi — Front Controller / Router Utama
+ * File: index.php
+ *
+ * Semua request masuk melalui file ini.
+ * Routing menggunakan query string: ?page=nama_halaman
+ * ============================================================
+ */
+
+// ── Bootstrap ──────────────────────────────────────────────
+require_once __DIR__ . '/config/app.php';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/core/Auth.php';
+require_once __DIR__ . '/core/Helper.php';
+
+// ── Autoload Models ──────────────────────────────────────────
+$modelFiles = [
+    'User', 'Mahasiswa', 'Dosen', 'Pengajuan',
+    'Pembimbing', 'StatusLog', 'Notifikasi',
+];
+foreach ($modelFiles as $model) {
+    require_once __DIR__ . "/models/{$model}.php";
+}
+
+// ── Autoload Controllers ──────────────────────────────────────
+$controllerFiles = [
+    'AuthController', 'DashboardController', 'PengajuanController',
+    'StaffController', 'KaprodiController', 'DewanController',
+];
+foreach ($controllerFiles as $ctrl) {
+    require_once __DIR__ . "/controllers/{$ctrl}.php";
+}
+
+// ── Mulai Sesi ───────────────────────────────────────────────
+Auth::startSession();
+
+// ── Router ───────────────────────────────────────────────────
+$page = get('page', 'dashboard');
+
+// Halaman publik (tidak perlu login)
+$publicPages = ['login', 'login.post'];
+
+if (!in_array($page, $publicPages) && !Auth::check()) {
+    redirect('?page=login');
+}
+
+// ── Dispatch ke controller yang sesuai ───────────────────────
+switch ($page) {
+
+    // ── AUTH ──────────────────────────────────────────────────
+    case 'login':
+        (new AuthController())->showLogin();
+        break;
+
+    case 'login.post':
+        (new AuthController())->login();
+        break;
+
+    case 'logout':
+        (new AuthController())->logout();
+        break;
+
+    // ── DASHBOARD ─────────────────────────────────────────────
+    case 'dashboard':
+        (new DashboardController())->index();
+        break;
+
+    // ── PENGAJUAN (Mahasiswa) ─────────────────────────────────
+    case 'pengajuan':
+        Auth::requireLogin();
+        if (Auth::role() === ROLE_MAHASISWA) {
+            (new PengajuanController())->index();
+        } else {
+            // Role lain redirect ke halaman mereka
+            redirect('?page=dashboard');
+        }
+        break;
+
+    case 'pengajuan.create':
+        (new PengajuanController())->create();
+        break;
+
+    case 'pengajuan.store':
+        (new PengajuanController())->store();
+        break;
+
+    case 'pengajuan.show':
+        (new PengajuanController())->show();
+        break;
+
+    case 'pengajuan.edit':
+        (new PengajuanController())->edit();
+        break;
+
+    case 'pengajuan.update':
+        (new PengajuanController())->update();
+        break;
+
+    case 'pengajuan.submit':
+        (new PengajuanController())->submit();
+        break;
+
+    case 'pengajuan.delete':
+        (new PengajuanController())->delete();
+        break;
+
+    // ── STAFF ─────────────────────────────────────────────────
+    case 'staff':
+        (new StaffController())->index();
+        break;
+
+    case 'staff.verifikasi':
+        (new StaffController())->verifikasi();
+        break;
+
+    case 'staff.proses':
+        (new StaffController())->prosesVerifikasi();
+        break;
+
+    // ── KAPRODI ───────────────────────────────────────────────
+    case 'kaprodi':
+        (new KaprodiController())->index();
+        break;
+
+    case 'kaprodi.review':
+        (new KaprodiController())->review();
+        break;
+
+    case 'kaprodi.proses':
+        (new KaprodiController())->prosesReview();
+        break;
+
+    // ── DEWAN ─────────────────────────────────────────────────
+    case 'dewan':
+        (new DewanController())->index();
+        break;
+
+    case 'dewan.pembimbing':
+        (new DewanController())->pembimbing();
+        break;
+
+    case 'dewan.proses':
+        (new DewanController())->prosesPembimbing();
+        break;
+
+    // ── NOTIFIKASI ────────────────────────────────────────────
+    case 'notif':
+        Auth::requireLogin();
+        $notifModel = new Notifikasi();
+        $notifList  = $notifModel->getByUserId(Auth::id(), 50);
+        $pageTitle  = 'Notifikasi';
+        require __DIR__ . '/views/notif/index.php';
+        break;
+
+    case 'notif.read':
+        Auth::requireLogin();
+        $nid = (int)get('id');
+        $ref = (int)get('ref');
+        (new Notifikasi())->markRead($nid, Auth::id());
+        redirect($ref ? '?page=pengajuan.show&id=' . $ref : '?page=notif');
+        break;
+
+    case 'notif.readall':
+        Auth::requireLogin();
+        (new Notifikasi())->markAllRead(Auth::id());
+        setFlash('success', 'Semua notifikasi ditandai sudah dibaca.');
+        redirect('?page=notif');
+        break;
+
+    // ── ERROR PAGES ───────────────────────────────────────────
+    case '403':
+        http_response_code(403);
+        $pageTitle = 'Akses Ditolak';
+        require __DIR__ . '/views/errors/403.php';
+        break;
+
+    // ── DEFAULT (halaman tidak ditemukan) ─────────────────────
+    default:
+        http_response_code(404);
+        $pageTitle = 'Halaman Tidak Ditemukan';
+        // Redirect ke dashboard jika sudah login
+        setFlash('warning', "Halaman '{$page}' tidak ditemukan.");
+        redirect('?page=dashboard');
+}
