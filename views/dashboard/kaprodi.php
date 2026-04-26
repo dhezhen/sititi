@@ -58,6 +58,30 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
+<!-- Analitik Visual (Charts) -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-pie-chart-fill me-2 text-primary"></i>Tren Bidang / Topik Skripsi
+            </div>
+            <div class="card-body">
+                <canvas id="bidangChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <i class="bi bi-bar-chart-fill me-2 text-success"></i>Statistik Pengajuan (6 Bulan Terakhir)
+            </div>
+            <div class="card-body">
+                <canvas id="trendChart" style="max-height: 300px;"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Statistik per Angkatan -->
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
@@ -182,3 +206,72 @@ require BASE_PATH . '/views/layouts/header.php';
 <?php require BASE_PATH . '/views/components/workload_table.php'; ?>
 
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Data Bidang
+    const bidangLabels = <?= json_encode(array_column($bidangStats, 'bidang')) ?>;
+    const bidangData = <?= json_encode(array_column($bidangStats, 'jumlah')) ?>;
+    
+    // Data Trend
+    const trendLabels = <?= json_encode(array_column($trendStats, 'bulan')) ?>;
+    const trendData = <?= json_encode(array_column($trendStats, 'jumlah')) ?>;
+
+    // Palette Warna Modern
+    const colors = [
+        '#4f46e5', '#10b981', '#f59e0b', '#ef4444', 
+        '#8b5cf6', '#ec4899', '#0ea5e9', '#64748b'
+    ];
+
+    if (document.getElementById('bidangChart') && bidangLabels.length > 0) {
+        new Chart(document.getElementById('bidangChart'), {
+            type: 'doughnut',
+            data: {
+                labels: bidangLabels,
+                datasets: [{
+                    data: bidangData,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    }
+
+    if (document.getElementById('trendChart') && trendLabels.length > 0) {
+        // Ubah format 'YYYY-MM' ke nama bulan (opsional, tapi biar simpel biarkan dulu)
+        new Chart(document.getElementById('trendChart'), {
+            type: 'bar',
+            data: {
+                labels: trendLabels,
+                datasets: [{
+                    label: 'Jumlah Pengajuan',
+                    data: trendData,
+                    backgroundColor: '#4f46e5',
+                    borderRadius: 6,
+                    barPercentage: 0.6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+});
+</script>

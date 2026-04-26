@@ -166,6 +166,30 @@ class DashboardController {
             ");
             $stmtS->execute([$prodiId]);
             $angkatanStats = $stmtS->fetchAll(PDO::FETCH_ASSOC);
+
+            // Statistik Bidang/Topik
+            $stmtB = $db->prepare("
+                SELECT bidang, COUNT(*) as jumlah 
+                FROM pengajuan_judul p 
+                JOIN mahasiswa m ON m.user_id = p.user_id 
+                WHERE m.prodi_id = ? 
+                GROUP BY bidang 
+                ORDER BY jumlah DESC
+            ");
+            $stmtB->execute([$prodiId]);
+            $bidangStats = $stmtB->fetchAll(PDO::FETCH_ASSOC);
+
+            // Statistik Pengajuan per Bulan (6 Bulan Terakhir)
+            $stmtT = $db->prepare("
+                SELECT DATE_FORMAT(p.created_at, '%Y-%m') as bulan, COUNT(*) as jumlah 
+                FROM pengajuan_judul p 
+                JOIN mahasiswa m ON m.user_id = p.user_id 
+                WHERE m.prodi_id = ? AND p.created_at >= DATE_SUB(NOW(), INTERVAL 5 MONTH) 
+                GROUP BY bulan 
+                ORDER BY bulan ASC
+            ");
+            $stmtT->execute([$prodiId]);
+            $trendStats = $stmtT->fetchAll(PDO::FETCH_ASSOC);
         }
 
         // Statistik Beban Kerja Dosen
