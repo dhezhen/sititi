@@ -166,11 +166,10 @@ class Auth {
         // Superadmin bypass (jika user memiliki role superadmin di manapun)
         if (in_array(ROLE_SUPERADMIN, self::roles())) return true;
 
-        // Halaman yang selalu diizinkan untuk semua role yang sudah login
         $alwaysAllowed = [
             'dashboard', 'profil', 'profil.update', 
             'notif', 'notif.read', 'notif.readall', 'logout',
-            'pengajuan.show'
+            'pengajuan.show', 'pengajuan.edit', 'pengajuan.update'
         ];
         if (in_array($page, $alwaysAllowed)) return true;
 

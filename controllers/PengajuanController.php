@@ -166,21 +166,26 @@ class PengajuanController {
     }
 
     /**
-     * Form edit pengajuan (hanya status draft/revisi)
+     * Form edit pengajuan (Mahasiswa: draft/revisi | Admin: Bebas)
      */
     public function edit(): void {
-        Auth::requireRole(ROLE_MAHASISWA);
+        Auth::requireLogin();
 
         $id        = (int)get('id');
         $pengajuan = $this->pengajuanModel->findById($id);
 
-        if (!$pengajuan || $pengajuan['user_id'] !== Auth::id()) {
-            redirect('?page=403');
+        if (!$pengajuan) {
+            redirect('?page=404');
         }
 
-        if (!in_array($pengajuan['status'], [STATUS_DRAFT, STATUS_REVISI])) {
-            setFlash('warning', 'Pengajuan tidak dapat diedit pada status saat ini.');
-            redirect('?page=pengajuan.show&id=' . $id);
+        if (Auth::role() === ROLE_MAHASISWA) {
+            if ($pengajuan['user_id'] !== Auth::id()) redirect('?page=403');
+            if (!in_array($pengajuan['status'], [STATUS_DRAFT, STATUS_REVISI])) {
+                setFlash('warning', 'Pengajuan tidak dapat diedit pada status saat ini.');
+                redirect('?page=pengajuan.show&id=' . $id);
+            }
+        } else {
+            Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN]);
         }
 
         $db   = getDB();
@@ -198,7 +203,7 @@ class PengajuanController {
      * Update pengajuan
      */
     public function update(): void {
-        Auth::requireRole(ROLE_MAHASISWA);
+        Auth::requireLogin();
 
         if (!isPost()) redirect('?page=pengajuan');
 
@@ -207,13 +212,18 @@ class PengajuanController {
         $id        = (int)post('id');
         $pengajuan = $this->pengajuanModel->findById($id);
 
-        if (!$pengajuan || $pengajuan['user_id'] !== Auth::id()) {
-            redirect('?page=403');
+        if (!$pengajuan) {
+            redirect('?page=404');
         }
 
-        if (!in_array($pengajuan['status'], [STATUS_DRAFT, STATUS_REVISI])) {
-            setFlash('warning', 'Pengajuan tidak dapat diedit.');
-            redirect('?page=pengajuan.show&id=' . $id);
+        if (Auth::role() === ROLE_MAHASISWA) {
+            if ($pengajuan['user_id'] !== Auth::id()) redirect('?page=403');
+            if (!in_array($pengajuan['status'], [STATUS_DRAFT, STATUS_REVISI])) {
+                setFlash('warning', 'Pengajuan tidak dapat diedit.');
+                redirect('?page=pengajuan.show&id=' . $id);
+            }
+        } else {
+            Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN]);
         }
 
         $judul  = trim(post('judul'));

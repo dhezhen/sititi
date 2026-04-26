@@ -34,6 +34,10 @@ require BASE_PATH . '/views/layouts/header.php';
             <i class="bi bi-trash"></i>
         </a>
         <?php endif; ?>
+        <?php elseif (in_array(Auth::role(), [ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN])): ?>
+        <a href="?page=pengajuan.edit&id=<?= $pengajuan['id'] ?>" class="btn btn-warning text-dark">
+            <i class="bi bi-pencil me-1"></i>Edit Data (Admin)
+        </a>
         <?php endif; ?>
         <?php if ($pengajuan['status'] !== 'draft'): ?>
         <button type="button" class="btn btn-secondary" onclick="window.print()">

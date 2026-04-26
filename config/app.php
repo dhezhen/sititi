@@ -42,6 +42,7 @@ define('STATUS_DITOLAK',      'ditolak');
 define('STATUS_DISETUJUI',    'disetujui');      // Kaprodi Final Approved
 define('STATUS_PEMBIMBING',   'pembimbing_ditentukan'); // Diajukan ke Fakultas
 define('STATUS_SELESAI',      'selesai');        // SK Siap Dicetak
+define('STATUS_SELESAI_FAKULTAS', 'selesai_fakultas'); // Selesai Diajukan ke Fakultas
 
 // Label status untuk tampilan
 define('STATUS_LABELS', [
@@ -53,6 +54,7 @@ define('STATUS_LABELS', [
     'revisi'                => ['label' => 'Perlu Revisi',          'class' => 'warning'],
     'ditolak'               => ['label' => 'Ditolak',               'class' => 'danger'],
     'disetujui'             => ['label' => 'Disetujui Kaprodi',     'class' => 'success'],
-    'pembimbing_ditentukan' => ['label' => 'Diajukan ke Fakultas',  'class' => 'success'],
-    'selesai'               => ['label' => 'SK Siap Dicetak',       'class' => 'success'],
+    'pembimbing_ditentukan' => ['label' => 'Selesai di Tingkat Prodi', 'class' => 'success'],
+    'selesai'               => ['label' => 'Siap Diajukan ke Fakultas', 'class' => 'primary'],
+    'selesai_fakultas'      => ['label' => 'Selesai Diajukan ke Fakultas', 'class' => 'dark'],
 ]);

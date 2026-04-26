@@ -169,10 +169,48 @@ require BASE_PATH . '/views/layouts/header.php';
                     <td><?= statusBadge($r['status']) ?></td>
                     <td class="small text-muted"><?= formatTanggal($r['created_at']) ?></td>
                     <td>
-                        <a href="?page=pengajuan.show&id=<?= $r['id'] ?>" 
-                           class="btn btn-sm btn-outline-primary" title="Lihat Detail">
-                            <i class="bi bi-eye me-1"></i>Detail
-                        </a>
+                        <div class="d-flex gap-1">
+                            <a href="?page=pengajuan.show&id=<?= $r['id'] ?>" 
+                               class="btn btn-sm btn-outline-primary" title="Lihat Detail">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <?php if ($r['status'] === STATUS_PEMBIMBING): ?>
+                            <form method="POST" action="?page=staff.mark_selesai" class="d-inline"
+                                  onsubmit="return confirm('Tandai pengajuan ini sebagai Siap Diajukan ke Fakultas?');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="pengajuan_id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-primary" title="Tandai Siap Fakultas">
+                                    <i class="bi bi-check2-all"></i>
+                                </button>
+                            </form>
+                            <?php elseif ($r['status'] === STATUS_SELESAI): ?>
+                            <form method="POST" action="?page=staff.mark_selesai_fakultas" class="d-inline"
+                                  onsubmit="return confirm('Tandai pengajuan ini sebagai Selesai Diajukan ke Fakultas?');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="pengajuan_id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-success" title="Selesai Diajukan">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="?page=staff.undo_selesai" class="d-inline"
+                                  onsubmit="return confirm('Batalkan status Siap Diajukan ke Fakultas? Pengajuan akan kembali ke status Selesai di Tingkat Prodi.');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="pengajuan_id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-warning text-dark" title="Batalkan Siap Fakultas">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </form>
+                            <?php elseif ($r['status'] === STATUS_SELESAI_FAKULTAS): ?>
+                            <form method="POST" action="?page=staff.undo_selesai_fakultas" class="d-inline"
+                                  onsubmit="return confirm('Batalkan status Selesai Diajukan ke Fakultas? Pengajuan akan kembali ke status Siap Diajukan ke Fakultas.');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="pengajuan_id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-warning text-dark" title="Batalkan Selesai Diajukan">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </form>
+                            <?php endif; ?>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>

@@ -64,7 +64,7 @@ class StaffController {
         $page    = max(1, (int)get('p', 1));
         $perPage = 15;
 
-        $filters = ['search' => $search, 'status' => [STATUS_PEMBIMBING, STATUS_SELESAI]];
+        $filters = ['search' => $search, 'status' => [STATUS_PEMBIMBING, STATUS_SELESAI, STATUS_SELESAI_FAKULTAS]];
         $total   = $this->pengajuanModel->count($filters);
         $pages   = (int)ceil($total / $perPage);
         $list    = $this->pengajuanModel->getAll($filters, $page, $perPage);
@@ -134,7 +134,7 @@ class StaffController {
     }
 
     /**
-     * Tandai pengajuan sebagai selesai (SK Siap Dicetak)
+     * Tandai pengajuan sebagai selesai (Siap Diajukan ke Fakultas)
      */
     public function markSelesai(): void {
         Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
@@ -150,18 +150,98 @@ class StaffController {
             redirect('?page=staff.siap_fakultas');
         }
 
-        // Update status menggunakan model (kita perlu set field status saja, jika updateStatus tersedia)
-        // Karena pengajuanModel update() meminta seluruh data, kita update langsung via DB atau pakai helper
         $db = getDB();
         $stmt = $db->prepare("UPDATE pengajuan_judul SET status = ? WHERE id = ?");
         $stmt->execute([STATUS_SELESAI, $id]);
 
-        $this->logModel->add($id, $pengajuan['status'], STATUS_SELESAI, Auth::id(), 'Proses pengajuan selesai. SK Pembimbing siap dicetak.');
+        $this->logModel->add($id, $pengajuan['status'], STATUS_SELESAI, Auth::id(), 'Proses pengajuan di Prodi selesai. Berkas Siap Diajukan ke Fakultas.');
+        $this->notifModel->send($pengajuan['user_id'], "Pengajuan judul Anda telah sepenuhnya Selesai di tingkat Prodi dan Siap Diajukan ke Fakultas.", $id);
 
-        // Notif ke Mahasiswa
-        $this->notifModel->send($pengajuan['user_id'], "Pengajuan judul Anda telah sepenuhnya Selesai. SK Pembimbing siap dicetak.", $id);
+        setFlash('success', 'Status pengajuan berhasil diubah menjadi Siap Diajukan ke Fakultas.');
+        redirect('?page=staff.siap_fakultas');
+    }
 
-        setFlash('success', 'Status pengajuan berhasil diubah menjadi Selesai (SK Siap Dicetak).');
+    /**
+     * Batalkan status selesai (kembali ke tahap diajukan ke fakultas)
+     */
+    public function undoSelesai(): void {
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
+
+        if (!isPost()) redirect('?page=staff.siap_fakultas');
+        verifyCsrf();
+
+        $id = (int)post('pengajuan_id');
+        $pengajuan = $this->pengajuanModel->findById($id);
+
+        if (!$pengajuan || $pengajuan['status'] !== STATUS_SELESAI) {
+            setFlash('danger', 'Data tidak valid atau status tidak sesuai.');
+            redirect('?page=staff.siap_fakultas');
+        }
+
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE pengajuan_judul SET status = ? WHERE id = ?");
+        $stmt->execute([STATUS_PEMBIMBING, $id]);
+
+        $this->logModel->add($id, $pengajuan['status'], STATUS_PEMBIMBING, Auth::id(), 'Status penyelesaian dibatalkan oleh petugas. Kembali menjadi Selesai di Tingkat Prodi.');
+        $this->notifModel->send($pengajuan['user_id'], "Status pengajuan Anda dikembalikan ke tahap Selesai di Tingkat Prodi.", $id);
+
+        setFlash('warning', 'Status "Siap Diajukan ke Fakultas" berhasil dibatalkan.');
+        redirect('?page=staff.siap_fakultas');
+    }
+
+    /**
+     * Tandai pengajuan sebagai selesai diajukan ke fakultas
+     */
+    public function markSelesaiFakultas(): void {
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
+
+        if (!isPost()) redirect('?page=staff.siap_fakultas');
+        verifyCsrf();
+
+        $id = (int)post('pengajuan_id');
+        $pengajuan = $this->pengajuanModel->findById($id);
+
+        if (!$pengajuan || $pengajuan['status'] !== STATUS_SELESAI) {
+            setFlash('danger', 'Data tidak valid atau status tidak sesuai.');
+            redirect('?page=staff.siap_fakultas');
+        }
+
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE pengajuan_judul SET status = ? WHERE id = ?");
+        $stmt->execute([STATUS_SELESAI_FAKULTAS, $id]);
+
+        $this->logModel->add($id, $pengajuan['status'], STATUS_SELESAI_FAKULTAS, Auth::id(), 'Berkas telah selesai diserahkan/diajukan ke Fakultas.');
+        $this->notifModel->send($pengajuan['user_id'], "Pengajuan judul Anda telah selesai diajukan ke Fakultas.", $id);
+
+        setFlash('success', 'Status pengajuan berhasil diubah menjadi Selesai Diajukan ke Fakultas.');
+        redirect('?page=staff.siap_fakultas');
+    }
+
+    /**
+     * Batalkan status selesai diajukan ke fakultas (kembali ke siap diajukan)
+     */
+    public function undoSelesaiFakultas(): void {
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
+
+        if (!isPost()) redirect('?page=staff.siap_fakultas');
+        verifyCsrf();
+
+        $id = (int)post('pengajuan_id');
+        $pengajuan = $this->pengajuanModel->findById($id);
+
+        if (!$pengajuan || $pengajuan['status'] !== STATUS_SELESAI_FAKULTAS) {
+            setFlash('danger', 'Data tidak valid atau status tidak sesuai.');
+            redirect('?page=staff.siap_fakultas');
+        }
+
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE pengajuan_judul SET status = ? WHERE id = ?");
+        $stmt->execute([STATUS_SELESAI, $id]);
+
+        $this->logModel->add($id, $pengajuan['status'], STATUS_SELESAI, Auth::id(), 'Pembatalan status. Berkas kembali menjadi Siap Diajukan ke Fakultas.');
+        $this->notifModel->send($pengajuan['user_id'], "Status pengajuan Anda dikembalikan menjadi Siap Diajukan ke Fakultas.", $id);
+
+        setFlash('warning', 'Status "Selesai Diajukan ke Fakultas" berhasil dibatalkan.');
         redirect('?page=staff.siap_fakultas');
     }
 }

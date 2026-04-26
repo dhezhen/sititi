@@ -152,6 +152,18 @@ switch ($page) {
         (new StaffController())->markSelesai();
         break;
 
+    case 'staff.undo_selesai':
+        (new StaffController())->undoSelesai();
+        break;
+
+    case 'staff.mark_selesai_fakultas':
+        (new StaffController())->markSelesaiFakultas();
+        break;
+
+    case 'staff.undo_selesai_fakultas':
+        (new StaffController())->undoSelesaiFakultas();
+        break;
+
     // ── KAPRODI ───────────────────────────────────────────────
     case 'kaprodi':
         (new KaprodiController())->index();
