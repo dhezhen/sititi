@@ -13,24 +13,32 @@
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Quill RTE -->
+    <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?= APP_URL ?>/assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style.css?v=<?= time() ?>">
 </head>
 <body>
 
 <!-- Navbar Top -->
 <nav class="navbar navbar-expand-lg navbar-dark sititi-navbar sticky-top">
     <div class="container-fluid px-4">
+        <!-- Hamburger Toggle -->
+        <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle Navigation">
+            <i class="bi bi-list fs-4"></i>
+        </button>
+
         <!-- Brand -->
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="?page=dashboard">
-            <div class="brand-icon">
-                <i class="bi bi-journal-bookmark-fill"></i>
-            </div>
-            <span><?= APP_NAME ?></span>
+            <img src="assets/img/logo_fkom.png" alt="Logo FKOM" style="height: 35px; width: auto;">
+            <span class="ms-1"><?= APP_NAME ?></span>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
-            <span class="navbar-toggler-icon"></span>
+        <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <i class="bi bi-three-dots-vertical"></i>
         </button>
 
         <div class="collapse navbar-collapse" id="mainNav">
@@ -126,7 +134,7 @@
                         <li><hr class="dropdown-divider"></li>
                         <li>
                             <a class="dropdown-item text-danger" href="?page=logout"
-                               onclick="return confirm('Yakin ingin logout?')">
+                               data-confirm="Yakin ingin logout dari sistem?">
                                 <i class="bi bi-box-arrow-right me-2"></i>Logout
                             </a>
                         </li>
@@ -138,6 +146,7 @@
 </nav>
 
 <!-- Main Wrapper -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="d-flex">
     <!-- Sidebar -->
     <?php require BASE_PATH . '/views/layouts/sidebar.php'; ?>
@@ -145,3 +154,29 @@
     <!-- Content Area -->
     <main class="main-content flex-grow-1">
         <div class="content-wrapper">
+
+<script>
+    // Sidebar Toggle for Mobile
+    const body = document.body;
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', () => {
+            body.classList.toggle('sidebar-open');
+        });
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener('click', () => {
+            body.classList.remove('sidebar-open');
+        });
+    }
+
+    // Close sidebar on window resize if open
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 992) {
+            body.classList.remove('sidebar-open');
+        }
+    });
+</script>

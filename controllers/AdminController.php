@@ -23,7 +23,7 @@ class AdminController {
     // ── STAFF MANAGEMENT ──────────────────────────────────────────
 
     public function staff(): void {
-        Auth::requireRole(ROLE_SUPERADMIN); // Hanya superadmin yang boleh kelola staff
+        Auth::requireRole([ROLE_SUPERADMIN, ROLE_KAPRODI]); // Hanya superadmin yang boleh kelola staff
         
         $search  = trim(get('search'));
         $page    = max(1, (int)get('p', 1));
@@ -52,7 +52,7 @@ class AdminController {
     }
 
     public function staffStore(): void {
-        Auth::requireRole(ROLE_SUPERADMIN);
+        Auth::requireRole([ROLE_SUPERADMIN, ROLE_KAPRODI]);
         if (!isPost()) redirect('?page=admin.staff');
         verifyCsrf();
 
@@ -82,7 +82,7 @@ class AdminController {
     }
 
     public function staffUpdate(): void {
-        Auth::requireRole(ROLE_SUPERADMIN);
+        Auth::requireRole([ROLE_SUPERADMIN, ROLE_KAPRODI]);
         if (!isPost()) redirect('?page=admin.staff');
         verifyCsrf();
 
@@ -113,7 +113,7 @@ class AdminController {
     }
 
     public function staffDelete(): void {
-        Auth::requireRole(ROLE_SUPERADMIN);
+        Auth::requireRole([ROLE_SUPERADMIN, ROLE_KAPRODI]);
         $id = (int)get('id');
         if ($id) {
             $this->userModel->delete($id);
@@ -125,7 +125,7 @@ class AdminController {
     // ── MAHASISWA ───────────────────────────────────────────────────
 
     public function mahasiswa(): void {
-        Auth::requireRole(ROLE_STAFF); // Atau admin jika ada
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]); // Staff dan Kaprodi boleh akses
 
         $search  = get('search', '');
         $page    = max(1, (int)get('p', 1));
@@ -143,7 +143,7 @@ class AdminController {
     }
 
     public function mahasiswaStore(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
 
         if (!isPost()) redirect('?page=admin.mahasiswa');
         verifyCsrf();
@@ -215,7 +215,7 @@ class AdminController {
     }
 
     public function mahasiswaUpdate(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
         if (!isPost()) redirect('?page=admin.mahasiswa');
         verifyCsrf();
 
@@ -293,7 +293,7 @@ class AdminController {
     }
 
     public function mahasiswaDelete(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
         $id = (int)get('id');
         
         $mhs = $this->mhsModel->findById($id);
@@ -312,7 +312,7 @@ class AdminController {
     }
 
     public function importMahasiswa(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
 
         if (!isPost()) redirect('?page=admin.mahasiswa');
         verifyCsrf();
@@ -448,7 +448,7 @@ class AdminController {
     }
 
     public function dosenStore(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN]);
 
         if (!isPost()) redirect('?page=admin.dosen');
         verifyCsrf();
@@ -535,7 +535,7 @@ class AdminController {
     }
 
     public function dosenUpdate(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN]);
         if (!isPost()) redirect('?page=admin.dosen');
         verifyCsrf();
 
@@ -642,7 +642,7 @@ class AdminController {
     }
 
     public function dosenDelete(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN]);
         $id = (int)get('id');
         
         $dosen = $this->dosenModel->findById($id);
@@ -673,7 +673,7 @@ class AdminController {
     }
 
     public function importDosen(): void {
-        Auth::requireRole(ROLE_STAFF);
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN]);
 
         if (!isPost()) redirect('?page=admin.dosen');
         verifyCsrf();

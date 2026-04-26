@@ -5,34 +5,47 @@ require BASE_PATH . '/views/layouts/header.php';
 <div class="page-header">
     <nav aria-label="breadcrumb"><ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="?page=dashboard">Dashboard</a></li>
-        <li class="breadcrumb-item active">Tentukan Pembimbing</li>
+        <li class="breadcrumb-item active">Review & Penentuan</li>
     </ol></nav>
     <h1><i class="bi bi-people-fill me-2 text-primary"></i>Review & Penentuan Pembimbing Skripsi</h1>
 </div>
 <?php renderFlash(); ?>
-<div class="card mb-4">
+<!-- Status Tabs -->
+<ul class="nav nav-pills gap-2 mb-4">
+    <li class="nav-item">
+        <a class="nav-link <?= $status === STATUS_DIREVIEW ? 'active' : 'bg-white border' ?>" href="?page=dewan&status=direview">
+            <i class="bi bi-clock-history me-1"></i> Perlu Review
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?= $status === '' ? 'active' : 'bg-white border' ?>" href="?page=dewan&status=all">
+            <i class="bi bi-grid-fill me-1"></i> Semua Data
+        </a>
+    </li>
+</ul>
+
+<!-- Filter -->
+<div class="card mb-4 shadow-sm border-0">
     <div class="card-body py-3">
-        <form method="GET" class="row g-3 align-items-end">
+        <form method="GET" class="row g-3 align-items-center">
             <input type="hidden" name="page" value="dewan">
-            <div class="col-md-5">
-                <div class="search-box"><i class="bi bi-search"></i>
+            <input type="hidden" name="status" value="<?= e($status ?: 'all') ?>">
+            <div class="col-md-9">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
                     <input type="text" class="form-control" name="search"
-                           value="<?= e($search) ?>" placeholder="Cari nama, NIM, atau judul...">
+                           value="<?= e($search) ?>" placeholder="Cari nama mahasiswa, NIM, atau judul skripsi...">
                 </div>
             </div>
-            <div class="col-md-4">
-                <select class="form-select" name="status">
-                    <option value="disetujui" <?= $status==='disetujui'?'selected':'' ?>>Menunggu Pembimbing</option>
-                    <option value="pembimbing_ditentukan" <?= $status==='pembimbing_ditentukan'?'selected':'' ?>>Sudah Ada Pembimbing</option>
-                    <option value="">-- Semua --</option>
-                </select>
-            </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-funnel me-1"></i>Filter</button>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>Cari Data
+                </button>
             </div>
         </form>
     </div>
 </div>
+
 <div class="card">
     <div class="card-header">
         <i class="bi bi-list-ul me-2 text-primary"></i>Daftar Pengajuan

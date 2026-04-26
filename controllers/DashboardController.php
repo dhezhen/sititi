@@ -62,15 +62,15 @@ class DashboardController {
             $workload = $dosenModel->getWorkloadByAngkatan($dosenId);
             
             $stmtB = $db->prepare("
-                SELECT p.*, u.nama AS nama_mahasiswa, m.nim, pb.jabatan
-                FROM pembimbing pb
-                JOIN pengajuan_judul p ON p.id = pb.pengajuan_id
+                SELECT p.*, u.nama AS nama_mahasiswa, m.nim, 
+                       CASE WHEN p.pembimbing_1_id = ? THEN 1 ELSE 2 END as urutan
+                FROM pengajuan_judul p
                 JOIN mahasiswa m ON m.user_id = p.user_id
                 JOIN users u ON u.id = m.user_id
-                WHERE pb.dosen_id = ?
+                WHERE (p.pembimbing_1_id = ? OR p.pembimbing_2_id = ?)
                 ORDER BY p.created_at DESC
             ");
-            $stmtB->execute([$dosenId]);
+            $stmtB->execute([$dosenId, $dosenId, $dosenId]);
             $bimbingan = $stmtB->fetchAll(PDO::FETCH_ASSOC);
         }
 
@@ -104,7 +104,9 @@ class DashboardController {
 
         $diajukan    = $pengajuanModel->count(['status' => STATUS_DIAJUKAN]);
         $diverifikasi = $pengajuanModel->count(['status' => STATUS_DIVERIFIKASI]);
+        $siapFakultasCount = $pengajuanModel->count(['status' => STATUS_PEMBIMBING]);
         $recent      = $pengajuanModel->getRecent(5, STATUS_DIAJUKAN);
+        $siapFakultas = $pengajuanModel->getRecent(5, STATUS_PEMBIMBING);
         $notifasi    = (new Notifikasi())->getByUserId(Auth::id(), 5);
 
         // Statistik Pengajuan per Angkatan
@@ -138,7 +140,7 @@ class DashboardController {
         $direview     = $pengajuanModel->count(['status' => STATUS_DIREVIEW]);
         $disetujui    = $pengajuanModel->count(['status' => STATUS_DISETUJUI]);
         $ditolak      = $pengajuanModel->count(['status' => STATUS_DITOLAK]);
-        $recent       = $pengajuanModel->getRecent(5, STATUS_DIVERIFIKASI);
+        $recent       = $pengajuanModel->getRecent(5, [STATUS_DIVERIFIKASI, STATUS_DIREVIEW_DEWAN]);
         $notifasi     = (new Notifikasi())->getByUserId(Auth::id(), 5);
 
         // Statistik Pengajuan per Angkatan (Khusus Prodi Kaprodi)
@@ -179,10 +181,12 @@ class DashboardController {
     private function dewanDashboard(): void {
         $pengajuanModel = new Pengajuan();
 
-        $disetujui  = $pengajuanModel->count(['status' => STATUS_DISETUJUI]);
-        $pembimbing = $pengajuanModel->count(['status' => STATUS_PEMBIMBING]);
-        $recent     = $pengajuanModel->getRecent(5, STATUS_DISETUJUI);
-        $notifasi   = (new Notifikasi())->getByUserId(Auth::id(), 5);
+        $perluReview = $pengajuanModel->count(['status' => STATUS_DIREVIEW]);
+        $telahReview = $pengajuanModel->count(['status' => STATUS_DIREVIEW_DEWAN]);
+        $totalProses = $pengajuanModel->count(['status' => STATUS_PEMBIMBING]);
+        
+        $recent   = $pengajuanModel->getRecent(5, STATUS_DIREVIEW);
+        $notifasi = (new Notifikasi())->getByUserId(Auth::id(), 5);
 
         require BASE_PATH . '/views/dashboard/dewan.php';
     }

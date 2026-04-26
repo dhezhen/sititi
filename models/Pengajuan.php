@@ -90,8 +90,14 @@ class Pengajuan {
         $params = [];
 
         if (!empty($filters['status'])) {
-            $sql    .= " AND pj.status = ?";
-            $params[] = $filters['status'];
+            if (is_array($filters['status'])) {
+                $placeholders = implode(',', array_fill(0, count($filters['status']), '?'));
+                $sql .= " AND pj.status IN ($placeholders)";
+                $params = array_merge($params, $filters['status']);
+            } else {
+                $sql    .= " AND pj.status = ?";
+                $params[] = $filters['status'];
+            }
         }
         if (!empty($filters['search'])) {
             $sql    .= " AND (u.nama LIKE ? OR pj.judul LIKE ? OR m.nim LIKE ?)";
@@ -125,8 +131,14 @@ class Pengajuan {
         $params = [];
 
         if (!empty($filters['status'])) {
-            $sql    .= " AND pj.status = ?";
-            $params[] = $filters['status'];
+            if (is_array($filters['status'])) {
+                $placeholders = implode(',', array_fill(0, count($filters['status']), '?'));
+                $sql .= " AND pj.status IN ($placeholders)";
+                $params = array_merge($params, $filters['status']);
+            } else {
+                $sql    .= " AND pj.status = ?";
+                $params[] = $filters['status'];
+            }
         }
         if (!empty($filters['search'])) {
             $sql    .= " AND (u.nama LIKE ? OR pj.judul LIKE ? OR m.nim LIKE ?)";
@@ -170,17 +182,32 @@ class Pengajuan {
      * Update pengajuan (hanya bisa jika status draft/revisi)
      */
     public function update(int $id, array $data): bool {
-        $fields = ['judul=?', 'deskripsi=?', 'bidang=?', 'pembimbing_1_id=?', 'pembimbing_2_id=?', 'updated_at=NOW()'];
-        $params = [$data['judul'], $data['deskripsi'], $data['bidang'], $data['pembimbing_1_id'] ?? null, $data['pembimbing_2_id'] ?? null];
+        $fields = [];
+        $params = [];
 
-        if (!empty($data['file_proposal'])) {
-            $fields[] = 'file_proposal=?';
-            $params[] = $data['file_proposal'];
+        $map = [
+            'judul'            => 'judul=?',
+            'deskripsi'        => 'deskripsi=?',
+            'bidang'           => 'bidang=?',
+            'pembimbing_1_id'  => 'pembimbing_1_id=?',
+            'pembimbing_2_id'  => 'pembimbing_2_id=?',
+            'file_proposal'    => 'file_proposal=?'
+        ];
+
+        foreach ($map as $key => $sqlPart) {
+            if (array_key_exists($key, $data)) {
+                $fields[] = $sqlPart;
+                $params[] = $data[$key];
+            }
         }
 
+        if (empty($fields)) return false;
+
+        $fields[] = 'updated_at=NOW()';
         $params[] = $id;
-        $sql      = "UPDATE pengajuan_judul SET " . implode(', ', $fields) . " WHERE id=?";
-        $stmt     = $this->db->prepare($sql);
+        
+        $sql  = "UPDATE pengajuan_judul SET " . implode(', ', $fields) . " WHERE id=?";
+        $stmt = $this->db->prepare($sql);
         return $stmt->execute($params);
     }
 
@@ -248,20 +275,80 @@ class Pengajuan {
     /**
      * Pengajuan terbaru (untuk dashboard)
      */
-    public function getRecent(int $limit = 5, ?string $status = null): array {
-        $sql    = "SELECT pj.*, u.nama AS nama_mahasiswa, m.nim
+    public function getRecent(int $limit = 5, $status = null): array {
+        $sql    = "SELECT pj.*, u.nama AS nama_mahasiswa, m.nim, pr.nama AS nama_prodi
                    FROM pengajuan_judul pj
                    JOIN users u ON u.id = pj.user_id
                    JOIN mahasiswa m ON m.user_id = pj.user_id
+                   LEFT JOIN prodi pr ON pr.id = m.prodi_id
                    WHERE 1=1";
         $params = [];
         if ($status) {
-            $sql    .= " AND pj.status = ?";
-            $params[] = $status;
+            if (is_array($status)) {
+                $placeholders = implode(',', array_fill(0, count($status), '?'));
+                $sql .= " AND pj.status IN ($placeholders)";
+                $params = array_merge($params, $status);
+            } else {
+                $sql    .= " AND pj.status = ?";
+                $params[] = $status;
+            }
         }
         $sql .= " ORDER BY pj.updated_at DESC LIMIT $limit";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Ambil daftar pengajuan yang pernah direview oleh user tertentu (History Dewan)
+     */
+    public function getReviewedBy(int $userId, string $search = '', int $page = 1, int $perPage = 15): array {
+        $offset = ($page - 1) * $perPage;
+        $sql = "SELECT pj.*, u.nama AS nama_mahasiswa, m.nim, pr.nama AS nama_prodi, sl.last_review_at
+                FROM (
+                    SELECT pengajuan_id, MAX(created_at) as last_review_at
+                    FROM status_log
+                    WHERE user_id = ?
+                    GROUP BY pengajuan_id
+                ) sl
+                JOIN pengajuan_judul pj ON pj.id = sl.pengajuan_id
+                JOIN users u ON u.id = pj.user_id
+                JOIN mahasiswa m ON m.user_id = pj.user_id
+                LEFT JOIN prodi pr ON pr.id = m.prodi_id
+                WHERE 1=1";
+        $params = [$userId];
+        
+        if ($search) {
+            $sql .= " AND (u.nama LIKE ? OR pj.judul LIKE ? OR m.nim LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+        
+        $sql .= " ORDER BY sl.last_review_at DESC LIMIT $perPage OFFSET $offset";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function countReviewedBy(int $userId, string $search = ''): int {
+        $sql = "SELECT COUNT(DISTINCT pj.id) 
+                FROM pengajuan_judul pj
+                JOIN status_log sl ON sl.pengajuan_id = pj.id
+                JOIN users u ON u.id = pj.user_id
+                JOIN mahasiswa m ON m.user_id = pj.user_id
+                WHERE sl.user_id = ?";
+        $params = [$userId];
+        
+        if ($search) {
+            $sql .= " AND (u.nama LIKE ? OR pj.judul LIKE ? OR m.nim LIKE ?)";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+            $params[] = "%$search%";
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
     }
 }

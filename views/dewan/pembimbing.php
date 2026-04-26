@@ -5,8 +5,8 @@ require BASE_PATH . '/views/layouts/header.php';
 <div class="page-header">
     <nav aria-label="breadcrumb"><ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="?page=dashboard">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="?page=dewan">Pembimbing</a></li>
-        <li class="breadcrumb-item active">Tentukan Pembimbing</li>
+        <li class="breadcrumb-item"><a href="?page=dewan">Review & Penentuan</a></li>
+        <li class="breadcrumb-item active">Proses Review</li>
     </ol></nav>
     <h1><i class="bi bi-person-plus me-2 text-primary"></i>Review Proposal & Pembimbing</h1>
 </div>
@@ -31,7 +31,9 @@ require BASE_PATH . '/views/layouts/header.php';
                 <h6 class="fw-bold text-muted small mb-1">JUDUL</h6>
                 <p class="fw-semibold text-primary mb-3"><?= e($pengajuan['judul']) ?></p>
                 <h6 class="fw-bold text-muted small mb-1">RINGKASAN PROPOSAL</h6>
-                <div class="p-3 rounded-3 bg-light small mb-3" style="white-space:pre-wrap"><?= e($pengajuan['deskripsi']) ?></div>
+                <div class="p-3 rounded-3 bg-light small mb-3">
+                    <?= (strpos($pengajuan['deskripsi'], '<') !== false) ? $pengajuan['deskripsi'] : nl2br(e($pengajuan['deskripsi'])) ?>
+                </div>
                 <?php if ($pengajuan['file_proposal']): ?>
                 <a href="<?= UPLOAD_URL ?>/<?= e($pengajuan['file_proposal']) ?>" target="_blank" class="btn btn-outline-danger btn-sm">
                     <i class="bi bi-file-earmark-pdf me-1"></i>Lihat Proposal Lengkap
@@ -72,9 +74,11 @@ require BASE_PATH . '/views/layouts/header.php';
                     </div>
 
                     <div class="mb-4">
-                        <label for="catatan" class="form-label fw-semibold">Catatan / Rekomendasi</label>
-                        <textarea class="form-control" id="catatan" name="catatan" rows="3"
-                                  placeholder="Catatan untuk mahasiswa terkait pembimbing..."></textarea>
+                        <label class="form-label fw-semibold">Catatan / Rekomendasi</label>
+                        <div class="editor-container shadow-sm rounded-3">
+                            <div class="editor" id="quill_catatan" data-input="catatan" style="min-height: 150px;"></div>
+                        </div>
+                        <input type="hidden" name="catatan" id="catatan">
                     </div>
 
                     <button type="submit" class="btn btn-primary px-4" id="btn-submit"
@@ -123,7 +127,11 @@ require BASE_PATH . '/views/layouts/header.php';
                         <div class="timeline-dot <?= $dc ?>"></div>
                         <div class="timeline-content">
                             <?= statusBadge($log['status_baru']) ?>
-                            <?php if ($log['catatan']): ?><div class="small text-secondary mt-1"><?= e($log['catatan']) ?></div><?php endif; ?>
+                            <?php if ($log['catatan']): ?>
+                            <div class="small text-secondary mt-1">
+                                <?= (strpos($log['catatan'], '<') !== false) ? $log['catatan'] : nl2br(e($log['catatan'])) ?>
+                            </div>
+                            <?php endif; ?>
                             <div class="timeline-meta mt-1"><?= e($log['nama_user']) ?> · <?= formatTanggal($log['created_at'], true) ?></div>
                         </div>
                     </div>
@@ -138,25 +146,15 @@ require BASE_PATH . '/views/layouts/header.php';
 document.addEventListener('DOMContentLoaded', function() {
     const aksiTetapkan = document.getElementById('aksi_tetapkan');
     const aksiRevisi = document.getElementById('aksi_revisi');
-    const catatan = document.getElementById('catatan');
     const btnSubmit = document.getElementById('btn-submit');
+    const quillEditor = document.querySelector('#quill_catatan .ql-editor');
 
     function toggleFields() {
         if (aksiRevisi.checked) {
-            catatan.setAttribute('required', 'required');
-            
-            // Highlight catatan
-            catatan.placeholder = "Tuliskan komentar atau poin revisi untuk mahasiswa... (Wajib)";
-            
             // Ganti warna tombol
             btnSubmit.className = 'btn btn-warning px-4';
             btnSubmit.innerHTML = '<i class="bi bi-arrow-return-left me-2"></i>Kembalikan untuk Revisi';
         } else {
-            catatan.removeAttribute('required');
-            
-            // Reset catatan
-            catatan.placeholder = "Catatan tambahan untuk mahasiswa...";
-            
             // Reset tombol
             btnSubmit.className = 'btn btn-primary px-4';
             btnSubmit.innerHTML = '<i class="bi bi-check-circle me-2"></i>Setujui Proposal';
@@ -170,5 +168,6 @@ document.addEventListener('DOMContentLoaded', function() {
     toggleFields();
 });
 </script>
+
 
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>

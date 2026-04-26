@@ -49,14 +49,74 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    /* ── Konfirmasi hapus/tolak ── */
-    document.querySelectorAll('[data-confirm]').forEach(function (el) {
-        el.addEventListener('click', function (e) {
-            if (!confirm(this.dataset.confirm)) {
-                e.preventDefault();
-            }
-        });
+    /* ── SweetAlert Global Config ── */
+    window.SwalToast = Swal.mixin({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000,
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
     });
+
+    /* ── Handle SweetAlert Confirmation ── */
+    document.body.addEventListener('click', function (e) {
+        let confirmBtn = e.target.closest('[data-confirm]');
+        if (confirmBtn) {
+            e.preventDefault();
+            const message = confirmBtn.dataset.confirm || "Apakah Anda yakin?";
+            
+            // Check if Swal is available
+            if (typeof Swal !== 'undefined') {
+                const type = confirmBtn.dataset.type || "warning";
+                const confirmText = confirmBtn.dataset.confirmText || "Ya, Lanjutkan";
+
+                Swal.fire({
+                    title: 'Konfirmasi',
+                    text: message,
+                    icon: type,
+                    showCancelButton: true,
+                    confirmButtonColor: '#4f46e5',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: confirmText,
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        executeConfirmAction(confirmBtn);
+                    }
+                });
+            } else {
+                // Fallback to standard confirm if Swal is not loaded
+                if (confirm(message)) {
+                    executeConfirmAction(confirmBtn);
+                }
+            }
+        }
+    });
+
+    function jsLog(msg) {
+        fetch('scratch/js_log.php?msg=' + encodeURIComponent(msg));
+    }
+
+    function executeConfirmAction(btn) {
+        if (btn.tagName === 'A') {
+            window.location.href = btn.href;
+        } else if (btn.closest('form')) {
+            // Hapus data-confirm agar tidak loop, lalu klik ulang button-nya
+            // Ini cara paling aman agar nilai button (name/value) tetap terkirim secara native
+            delete btn.dataset.confirm;
+            btn.click();
+        }
+    }
+
+
+
+
+
 
     /* ── Aktifkan tooltip Bootstrap ── */
     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
@@ -66,6 +126,32 @@ document.addEventListener('DOMContentLoaded', function () {
     /* ── Aktifkan popover Bootstrap ── */
     document.querySelectorAll('[data-bs-toggle="popover"]').forEach(function (el) {
         new bootstrap.Popover(el);
+    });
+
+    /* ── Quill Rich Text Editor ── */
+    document.querySelectorAll('.editor').forEach(function (el) {
+        var quill = new Quill(el, {
+            theme: 'snow',
+            modules: {
+                toolbar: [
+                    ['bold', 'italic', 'underline'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    ['clean']
+                ]
+            }
+        });
+
+        // Sinkronisasi dengan hidden input jika ada dalam form
+        var form = el.closest('form');
+        if (form) {
+            form.addEventListener('submit', function () {
+                var inputId = el.dataset.input;
+                if (inputId) {
+                    var input = document.getElementById(inputId);
+                    if (input) input.value = quill.root.innerHTML;
+                }
+            });
+        }
     });
 
     /* ── Preview karakter textarea ── */

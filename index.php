@@ -29,7 +29,7 @@ foreach ($modelFiles as $model) {
 $controllerFiles = [
     'AuthController', 'DashboardController', 'PengajuanController',
     'StaffController', 'KaprodiController', 'DewanController', 'AdminController', 'AccountController',
-    'SuperadminController'
+    'SuperadminController', 'ExportController'
 ];
 foreach ($controllerFiles as $ctrl) {
     require_once __DIR__ . "/controllers/{$ctrl}.php";
@@ -144,6 +144,14 @@ switch ($page) {
         (new StaffController())->prosesVerifikasi();
         break;
 
+    case 'staff.siap_fakultas':
+        (new StaffController())->siapFakultas();
+        break;
+
+    case 'staff.mark_selesai':
+        (new StaffController())->markSelesai();
+        break;
+
     // ── KAPRODI ───────────────────────────────────────────────
     case 'kaprodi':
         (new KaprodiController())->index();
@@ -164,6 +172,10 @@ switch ($page) {
     // ── DEWAN ─────────────────────────────────────────────────
     case 'dewan':
         (new DewanController())->index();
+        break;
+
+    case 'dewan.history':
+        (new DewanController())->history();
         break;
 
     case 'dewan.pembimbing':
@@ -286,6 +298,11 @@ switch ($page) {
 
     case 'superadmin.database':
         (new SuperadminController())->database();
+        break;
+
+    // ── EXPORT ────────────────────────────────────────────────
+    case 'export.excel':
+        (new ExportController())->excel();
         break;
 
     case 'superadmin.database.backup':

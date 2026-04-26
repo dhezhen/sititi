@@ -60,11 +60,17 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                     </div>
 
                     <div class="mb-4">
-                        <label for="deskripsi" class="form-label">Deskripsi / Latar Belakang <span class="text-danger">*</span></label>
-                        <textarea class="form-control" id="deskripsi" name="deskripsi"
-                                  rows="6" required minlength="30"
-                                  data-max="2000"><?= e($pengajuan['deskripsi']) ?></textarea>
-                        <div class="form-text" id="deskripsi_counter"></div>
+                        <label class="form-label">Deskripsi / Latar Belakang <span class="text-danger">*</span></label>
+                        <div class="editor-container shadow-sm rounded-3">
+                            <div class="editor" id="quill_editor" data-input="deskripsi" style="min-height: 300px;">
+                                <?= $pengajuan['deskripsi'] ?>
+                            </div>
+                        </div>
+                        <input type="hidden" name="deskripsi" id="deskripsi" value="<?= e($pengajuan['deskripsi']) ?>">
+                        <div class="form-text mt-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Gunakan formatting di atas untuk memperjelas poin-poin proposal Anda.
+                        </div>
                     </div>
 
                     <!-- Usulan Pembimbing -->

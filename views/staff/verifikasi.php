@@ -48,8 +48,8 @@ require BASE_PATH . '/views/layouts/header.php';
                 <p class="mb-3"><span class="badge bg-secondary"><?= e($pengajuan['bidang']) ?></span></p>
 
                 <h6 class="fw-bold mb-1 text-muted small">DESKRIPSI</h6>
-                <div class="p-3 rounded-3 mb-3" style="background:#f9fafb;white-space:pre-wrap;font-size:.9rem;line-height:1.7">
-                    <?= e($pengajuan['deskripsi']) ?>
+                <div class="p-3 rounded-3 mb-3" style="background:#f9fafb;font-size:.9rem;line-height:1.7">
+                    <?= (strpos($pengajuan['deskripsi'], '<') !== false) ? $pengajuan['deskripsi'] : nl2br(e($pengajuan['deskripsi'])) ?>
                 </div>
 
                 <h6 class="fw-bold mb-1 text-muted small">FILE PROPOSAL</h6>
@@ -86,7 +86,7 @@ require BASE_PATH . '/views/layouts/header.php';
                     <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" name="aksi" value="lengkap"
                                 class="btn btn-success"
-                                data-confirm="Tandai berkas LENGKAP dan kirim ke Kaprodi?">
+                                onclick="return confirm('Tandai berkas LENGKAP dan kirim ke Kaprodi?')">
                             <i class="bi bi-check-circle me-2"></i>Berkas Lengkap → Kirim ke Kaprodi
                         </button>
                         <button type="submit" name="aksi" value="tidak_lengkap"

@@ -13,56 +13,59 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
-<div class="row">
-    <div class="col-md-4 mb-4">
-        <div class="card text-center">
-            <div class="card-body py-5">
-                <div class="user-avatar mx-auto mb-3" style="width:100px; height:100px; font-size:2.5rem;">
-                    <?= strtoupper(substr($user['nama'], 0, 1)) ?>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center gap-4 mb-4 pb-4 border-bottom">
+                    <div class="user-avatar" style="width:80px; height:80px; font-size:2rem; flex-shrink:0;">
+                        <?= strtoupper(substr($user['nama'], 0, 1)) ?>
+                    </div>
+                    <div>
+                        <h4 class="mb-1 fw-bold"><?= e($user['nama']) ?></h4>
+                        <div class="text-muted mb-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-envelope"></i> <?= e($user['email']) ?>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary-subtle text-primary px-2 py-1"><?= ucfirst(Auth::role()) ?></span>
+                            <span class="text-muted" style="font-size: 0.8rem;"><i class="bi bi-clock me-1"></i>Terdaftar: <?= formatTanggal($user['created_at']) ?></span>
+                        </div>
+                    </div>
                 </div>
-                <h4 class="mb-1"><?= e($user['nama']) ?></h4>
-                <p class="text-muted mb-2"><?= e($user['email']) ?></p>
-                <span class="badge bg-primary"><?= ucfirst(Auth::role()) ?></span>
-            </div>
-            <div class="card-footer bg-light text-muted small">
-                Terdaftar sejak: <?= formatTanggal($user['created_at']) ?>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-8 mb-4">
-        <div class="card">
-            <div class="card-header"><i class="bi bi-gear me-2"></i>Pengaturan Akun</div>
-            <div class="card-body">
+
                 <form action="?page=profil.update" method="POST">
                     <?php csrfField(); ?>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Nama Lengkap <span class="text-danger">*</span></label>
-                        <input type="text" name="nama" class="form-control" value="<?= e($user['nama']) ?>" required>
+                    <h6 class="mb-3 text-primary fw-semibold"><i class="bi bi-person-lines-fill me-2"></i>Informasi Pribadi</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted fw-medium">Nama Lengkap <span class="text-danger">*</span></label>
+                            <input type="text" name="nama" class="form-control" value="<?= e($user['nama']) ?>" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted fw-medium">Alamat Email <span class="text-danger">*</span></label>
+                            <input type="email" name="email" class="form-control" value="<?= e($user['email']) ?>" required>
+                        </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Alamat Email <span class="text-danger">*</span></label>
-                        <input type="email" name="email" class="form-control" value="<?= e($user['email']) ?>" required>
+                    <h6 class="mb-2 text-primary fw-semibold"><i class="bi bi-shield-lock me-2"></i>Keamanan Akun</h6>
+                    <p class="small text-muted mb-3">Kosongkan kolom di bawah ini jika tidak ingin mengubah password saat ini.</p>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted fw-medium">Password Baru</label>
+                            <input type="password" name="password" class="form-control" minlength="6" placeholder="••••••••">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted fw-medium">Konfirmasi Password</label>
+                            <input type="password" name="password_confirm" class="form-control" minlength="6" placeholder="••••••••">
+                        </div>
                     </div>
                     
-                    <hr class="my-4">
-                    <h6 class="mb-3">Ubah Password <span class="text-muted fw-normal fs-6">(Kosongkan jika tidak ingin mengubah)</span></h6>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Password Baru</label>
-                        <input type="password" name="password" class="form-control" minlength="6">
+                    <div class="text-end pt-2 border-top">
+                        <button type="submit" class="btn btn-primary px-4 mt-3">
+                            <i class="bi bi-save me-2"></i>Simpan Perubahan
+                        </button>
                     </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label">Konfirmasi Password Baru</label>
-                        <input type="password" name="password_confirm" class="form-control" minlength="6">
-                    </div>
-                    
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-save me-1"></i>Simpan Perubahan
-                    </button>
                 </form>
             </div>
         </div>

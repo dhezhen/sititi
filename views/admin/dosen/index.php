@@ -174,11 +174,21 @@ require BASE_PATH . '/views/layouts/header.php';
                                             foreach ($availableRoles as $code => $label):
                                         ?>
                                         <div class="form-check">
-                                            <input class="form-check-input" type="checkbox" name="roles[]" value="<?= $code ?>" id="role_<?= $code ?>_<?= $r['id'] ?>" <?= in_array($code, $currentRoles) ? 'checked' : '' ?>>
+                                            <input class="form-check-input" type="checkbox" 
+                                                   <?= Auth::role() === ROLE_SUPERADMIN ? 'name="roles[]"' : 'disabled' ?> 
+                                                   value="<?= $code ?>" id="role_<?= $code ?>_<?= $r['id'] ?>" 
+                                                   <?= in_array($code, $currentRoles) ? 'checked' : '' ?>>
                                             <label class="form-check-input-label" for="role_<?= $code ?>_<?= $r['id'] ?>"><?= $label ?></label>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>
+                                    <?php if (Auth::role() !== ROLE_SUPERADMIN): ?>
+                                        <!-- Hidden input to retain existing roles if not superadmin -->
+                                        <?php foreach ($currentRoles as $cr): ?>
+                                            <input type="hidden" name="roles[]" value="<?= e($cr) ?>">
+                                        <?php endforeach; ?>
+                                        <div class="form-text small text-warning"><i class="bi bi-info-circle me-1"></i> Hanya Super Admin yang dapat mengubah role user.</div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -320,25 +330,28 @@ require BASE_PATH . '/views/layouts/header.php';
                     <label class="form-label">Role User <span class="text-danger">*</span></label>
                     <div class="d-flex flex-wrap gap-3">
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="roles[]" value="dosen" id="role_new_dosen" checked>
+                            <input class="form-check-input" type="checkbox" <?= Auth::role() === ROLE_SUPERADMIN ? 'name="roles[]"' : 'disabled' ?> value="dosen" id="role_new_dosen" checked>
                             <label class="form-check-input-label" for="role_new_dosen">Dosen (Pembimbing)</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="roles[]" value="dewan" id="role_new_dewan">
+                            <input class="form-check-input" type="checkbox" <?= Auth::role() === ROLE_SUPERADMIN ? 'name="roles[]"' : 'disabled' ?> value="dewan" id="role_new_dewan">
                             <label class="form-check-input-label" for="role_new_dewan">Dewan (Reviewer)</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="roles[]" value="kaprodi" id="role_new_kaprodi">
+                            <input class="form-check-input" type="checkbox" <?= Auth::role() === ROLE_SUPERADMIN ? 'name="roles[]"' : 'disabled' ?> value="kaprodi" id="role_new_kaprodi">
                             <label class="form-check-input-label" for="role_new_kaprodi">Kaprodi</label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="roles[]" value="staff" id="role_new_staff">
+                            <input class="form-check-input" type="checkbox" <?= Auth::role() === ROLE_SUPERADMIN ? 'name="roles[]"' : 'disabled' ?> value="staff" id="role_new_staff">
                             <label class="form-check-input-label" for="role_new_staff">Staff</label>
                         </div>
                     </div>
-                    <div class="form-text small text-info">
-                        <i class="bi bi-info-circle me-1"></i> Dosen dapat memiliki lebih dari satu peran.
-                    </div>
+                    <?php if (Auth::role() !== ROLE_SUPERADMIN): ?>
+                        <input type="hidden" name="roles[]" value="dosen">
+                        <div class="form-text small text-warning"><i class="bi bi-info-circle me-1"></i> Hanya Super Admin yang dapat mengubah role. Default role adalah Dosen.</div>
+                    <?php else: ?>
+                        <div class="form-text small text-info"><i class="bi bi-info-circle me-1"></i> Dosen dapat memiliki lebih dari satu peran.</div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

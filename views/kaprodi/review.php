@@ -30,7 +30,9 @@ require BASE_PATH . '/views/layouts/header.php';
                 <h6 class="fw-bold mb-2 text-muted small">JUDUL</h6>
                 <p class="fw-semibold fs-6 text-primary mb-3"><?= e($pengajuan['judul']) ?></p>
                 <h6 class="fw-bold mb-2 text-muted small">RINGKASAN PROPOSAL</h6>
-                <div class="p-3 rounded-3 mb-3" style="background:#f9fafb;white-space:pre-wrap;font-size:.9rem;line-height:1.7"><?= e($pengajuan['deskripsi']) ?></div>
+                <div class="p-3 rounded-3 mb-3" style="background:#f9fafb;font-size:.9rem;line-height:1.7">
+                    <?= (strpos($pengajuan['deskripsi'], '<') !== false) ? $pengajuan['deskripsi'] : nl2br(e($pengajuan['deskripsi'])) ?>
+                </div>
                 <?php if ($pengajuan['file_proposal']): ?>
                 <a href="<?= UPLOAD_URL ?>/<?= e($pengajuan['file_proposal']) ?>" target="_blank"
                    class="btn btn-outline-danger btn-sm mb-3">
@@ -39,13 +41,26 @@ require BASE_PATH . '/views/layouts/header.php';
                 <?php endif; ?>
             </div>
         </div>
-        <?php if (in_array($pengajuan['status'], ['diverifikasi', 'direview'])): ?>
+        
+        <!-- DEBUG INFO: Delete later -->
+        <div class="alert alert-warning">
+            DEBUG STATUS: '<?= $pengajuan['status'] ?>' <br>
+            EXPECTED: '<?= STATUS_DIREVIEW_DEWAN ?>'
+        </div>
+        <!-- END DEBUG INFO -->
+
+        <?php if (in_array($pengajuan['status'], [STATUS_DIVERIFIKASI, STATUS_DIREVIEW_DEWAN])): ?>
         <div class="card border-primary">
-            <div class="card-header bg-primary text-white"><i class="bi bi-check2-circle me-2"></i>Keputusan Kaprodi</div>
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-check2-circle me-2"></i>
+                <?= $pengajuan['status'] === STATUS_DIREVIEW_DEWAN ? 'Persetujuan Akhir Kaprodi' : 'Keputusan Kaprodi' ?>
+            </div>
             <div class="card-body">
                 <form action="?page=kaprodi.proses" method="POST">
                     <?php csrfField(); ?>
                     <input type="hidden" name="pengajuan_id" value="<?= $pengajuan['id'] ?>">
+                    
+                    <?php if ($pengajuan['status'] === STATUS_DIVERIFIKASI): ?>
                     <div class="mb-4">
                         <label class="form-label fw-semibold">Penentuan Pembimbing</label>
                         <div class="row g-3">
@@ -72,35 +87,36 @@ require BASE_PATH . '/views/layouts/header.php';
                                 </select>
                             </div>
                         </div>
-                        <div class="form-text mt-2 text-info small">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Usulan mahasiswa: 
-                            <strong><?= e($pengajuan['nama_pembimbing_1'] ?? '-') ?></strong> dan 
-                            <strong><?= e($pengajuan['nama_pembimbing_2'] ?? '-') ?></strong>.
-                            <br>
-                            Dosen <strong>Asisten Ahli</strong> hanya dapat menjadi Pembimbing 2.
-                        </div>
                     </div>
+                    <?php else: ?>
+                        <!-- Status Direview Dewan: Sudah ada pembimbing, tinggal Approve Akhir -->
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Proposal telah direview oleh Dewan. Silakan berikan keputusan akhir untuk diajukan ke Fakultas.
+                        </div>
+                    <?php endif; ?>
 
                     <div class="mb-4">
-                        <label for="catatan" class="form-label fw-semibold">Catatan / Komentar</label>
+                        <label for="catatan" class="form-label fw-semibold">Catatan / Komentar Akhir</label>
                         <textarea class="form-control" id="catatan" name="catatan" rows="4"
                                   placeholder="Wajib diisi jika Tolak atau Revisi..."></textarea>
                     </div>
                     <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" name="aksi" value="setujui" class="btn btn-success px-4"
-                                data-confirm="Setujui dan teruskan ke Dewan?">
-                            <i class="bi bi-patch-check me-2"></i>Setujui
+                                onclick="return confirm('<?= $pengajuan['status'] === STATUS_DIREVIEW_DEWAN ? 'Setujui Akhir dan Ajukan ke Fakultas?' : 'Setujui dan teruskan ke Dewan?' ?>')">
+                            <i class="bi bi-patch-check me-2"></i>
+                            <?= $pengajuan['status'] === STATUS_DIREVIEW_DEWAN ? 'Approve & Ajukan' : 'Setujui & Teruskan' ?>
                         </button>
                         <button type="submit" name="aksi" value="revisi" class="btn btn-warning text-white"
-                                data-confirm="Kembalikan untuk revisi?">
+                                onclick="return confirm('Kembalikan untuk revisi?')">
                             <i class="bi bi-pencil me-2"></i>Revisi
                         </button>
                         <button type="submit" name="aksi" value="tolak" class="btn btn-danger"
-                                data-confirm="Tolak pengajuan ini?">
+                                onclick="return confirm('Tolak pengajuan ini?')">
                             <i class="bi bi-x-circle me-2"></i>Tolak
                         </button>
                     </div>
+
                 </form>
             </div>
         </div>

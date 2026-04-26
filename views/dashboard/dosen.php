@@ -91,7 +91,7 @@ require BASE_PATH . '/views/layouts/header.php';
                                     </div>
                                 </td>
                                 <td>
-                                    <?php if ($b['jabatan'] === 'pembimbing1'): ?>
+                                    <?php if ((int)$b['urutan'] === 1): ?>
                                         <span class="badge bg-primary">Pembimbing Utama</span>
                                     <?php else: ?>
                                         <span class="badge bg-info">Pembimbing Pendamping</span>

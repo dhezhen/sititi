@@ -55,21 +55,47 @@ function getFlash(): ?array {
 }
 
 /**
- * Render flash message sebagai alert Bootstrap
+ * Render flash message sebagai SweetAlert Popup
  */
 function renderFlash(): void {
     $flash = getFlash();
     if ($flash) {
         $type    = e($flash['type']);
         $message = e($flash['message']);
+        
+        // Map bootstrap types to SweetAlert types
+        $swalType = $type;
+        if ($type === 'danger') $swalType = 'error';
+        
+        // Map type to title
+        $titles = [
+            'success' => 'Berhasil!',
+            'error'   => 'Gagal!',
+            'warning' => 'Perhatian!',
+            'info'    => 'Informasi',
+        ];
+        $title = $titles[$swalType] ?? 'Notifikasi';
+        
         echo <<<HTML
-        <div class="alert alert-{$type} alert-dismissible fade show shadow-sm" role="alert">
-            <i class="bi bi-info-circle-fill me-2"></i>{$message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: '{$swalType}',
+                        title: '{$title}',
+                        text: '{$message}',
+                        confirmButtonColor: '#4f46e5',
+                        confirmButtonText: 'OK',
+                        timer: 4000,
+                        timerProgressBar: true
+                    });
+                }
+            });
+        </script>
         HTML;
     }
 }
+
 
 /**
  * Generate badge Bootstrap berdasarkan status pengajuan

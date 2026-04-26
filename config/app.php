@@ -4,7 +4,7 @@
  * File: config/app.php
  */
 
-define('APP_NAME', 'SiTiTi');
+define('APP_NAME', 'Sistem Informasi Pengajuan Judul Skripsi');
 define('APP_FULL_NAME', 'Sistem Informasi Pengajuan Judul Skripsi');
 define('APP_VERSION', '1.0.0');
 define('APP_URL', 'http://localhost/sititi');
@@ -35,20 +35,24 @@ define('MAX_PEMBIMBING_PER_ANGKATAN', 20);
 define('STATUS_DRAFT',        'draft');
 define('STATUS_DIAJUKAN',     'diajukan');
 define('STATUS_DIVERIFIKASI', 'diverifikasi');
-define('STATUS_DIREVIEW',     'direview');
+define('STATUS_DIREVIEW',     'direview');       // Kaprodi assign advisor, wait for Dewan
+define('STATUS_DIREVIEW_DEWAN', 'direview_dewan'); // Dewan done, wait for Kaprodi Final
 define('STATUS_REVISI',       'revisi');
 define('STATUS_DITOLAK',      'ditolak');
-define('STATUS_DISETUJUI',    'disetujui');
-define('STATUS_PEMBIMBING',   'pembimbing_ditentukan');
+define('STATUS_DISETUJUI',    'disetujui');      // Kaprodi Final Approved
+define('STATUS_PEMBIMBING',   'pembimbing_ditentukan'); // Diajukan ke Fakultas
+define('STATUS_SELESAI',      'selesai');        // SK Siap Dicetak
 
 // Label status untuk tampilan
 define('STATUS_LABELS', [
     'draft'                 => ['label' => 'Draft',                 'class' => 'secondary'],
     'diajukan'              => ['label' => 'Diajukan',              'class' => 'info'],
     'diverifikasi'          => ['label' => 'Diverifikasi',          'class' => 'primary'],
-    'direview'              => ['label' => 'Sedang Direview',       'class' => 'warning'],
+    'direview'              => ['label' => 'Menunggu Review Dewan', 'class' => 'warning'],
+    'direview_dewan'        => ['label' => 'Telah Direview Dewan',  'class' => 'info'],
     'revisi'                => ['label' => 'Perlu Revisi',          'class' => 'warning'],
     'ditolak'               => ['label' => 'Ditolak',               'class' => 'danger'],
-    'disetujui'             => ['label' => 'Disetujui',             'class' => 'success'],
-    'pembimbing_ditentukan' => ['label' => 'Pembimbing Ditentukan', 'class' => 'success'],
+    'disetujui'             => ['label' => 'Disetujui Kaprodi',     'class' => 'success'],
+    'pembimbing_ditentukan' => ['label' => 'Diajukan ke Fakultas',  'class' => 'success'],
+    'selesai'               => ['label' => 'SK Siap Dicetak',       'class' => 'success'],
 ]);

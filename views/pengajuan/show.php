@@ -94,8 +94,8 @@ require BASE_PATH . '/views/layouts/header.php';
                 <p class="fs-6 fw-semibold text-primary mb-3"><?= e($pengajuan['judul']) ?></p>
 
                 <h6 class="fw-bold mb-2">Deskripsi / Latar Belakang</h6>
-                <div class="p-3 rounded-3" style="background:#f9fafb;white-space:pre-wrap;font-size:.9rem;line-height:1.7">
-                    <?= e($pengajuan['deskripsi']) ?>
+                <div class="p-3 rounded-3" style="background:#f9fafb;font-size:.9rem;line-height:1.7">
+                    <?= (strpos($pengajuan['deskripsi'], '<') !== false) ? $pengajuan['deskripsi'] : nl2br(e($pengajuan['deskripsi'])) ?>
                 </div>
 
                 <?php if ($pengajuan['catatan_terakhir']): ?>

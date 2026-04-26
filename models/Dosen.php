@@ -168,14 +168,13 @@ class Dosen {
      */
     public function getWorkloadByAngkatan(int $dosenId): array {
         $sql = "SELECT m.angkatan, COUNT(*) as total
-                FROM pembimbing p
-                JOIN pengajuan_judul pj ON pj.id = p.pengajuan_id
+                FROM pengajuan_judul pj
                 JOIN mahasiswa m ON m.user_id = pj.user_id
-                WHERE p.dosen_id = ?
+                WHERE pj.pembimbing_1_id = ? OR pj.pembimbing_2_id = ?
                 GROUP BY m.angkatan
                 ORDER BY m.angkatan DESC";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute([$dosenId]);
+        $stmt->execute([$dosenId, $dosenId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

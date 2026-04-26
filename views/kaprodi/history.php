@@ -4,19 +4,26 @@ require BASE_PATH . '/views/layouts/header.php';
 ?>
 
 <div class="page-header">
-    <nav aria-label="breadcrumb"><ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="?page=dashboard">Dashboard</a></li>
-        <li class="breadcrumb-item active">Histori Pengajuan</li>
-    </ol></nav>
-    <h1><i class="bi bi-clock-history me-2 text-primary"></i>Histori Pengajuan Judul Skripsi</h1>
+    <div class="page-header-title">
+        <nav aria-label="breadcrumb"><ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="?page=dashboard">Dashboard</a></li>
+            <li class="breadcrumb-item active">Histori Pengajuan</li>
+        </ol></nav>
+        <h1 class="mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Histori Pengajuan Judul Skripsi</h1>
+    </div>
+    <div class="page-header-actions">
+        <a href="?page=export.excel" class="btn btn-success shadow-sm px-4 py-2">
+            <i class="bi bi-file-earmark-excel me-2"></i>Export Excel
+        </a>
+    </div>
 </div>
 
 <?php renderFlash(); ?>
 
 <!-- Filter -->
-<div class="card mb-4">
-    <div class="card-body py-3">
-        <form method="GET" class="row g-3 align-items-end">
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-body py-4 px-4">
+        <form method="GET" class="row g-3 align-items-center">
             <input type="hidden" name="page" value="kaprodi.history">
             <div class="col-md-5">
                 <div class="search-box">
@@ -34,22 +41,26 @@ require BASE_PATH . '/views/layouts/header.php';
                 </select>
             </div>
             <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel me-1"></i>Filter
+                <button type="submit" class="btn btn-primary w-100 py-2">
+                    <i class="bi bi-funnel me-2"></i>Filter
                 </button>
             </div>
         </form>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header">
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 border-bottom">
         <i class="bi bi-list-ul me-2 text-primary"></i>Seluruh Pengajuan Prodi
-        <span class="badge bg-primary ms-2"><?= $total ?></span>
+        <span class="badge bg-primary-light text-primary ms-2"><?= $total ?></span>
     </div>
     <div class="card-body p-0">
         <?php if (empty($list)): ?>
-        <div class="empty-state"><i class="bi bi-check2-all"></i><h5>Tidak Ada Data</h5></div>
+        <div class="empty-state">
+            <i class="bi bi-folder2-open"></i>
+            <h5>Tidak Ada Data</h5>
+            <p class="text-muted">Belum ada pengajuan yang sesuai dengan filter Anda.</p>
+        </div>
         <?php else: ?>
         <table class="table table-sititi mb-0">
             <thead>

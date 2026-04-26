@@ -13,36 +13,52 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
+<!-- Status Tabs -->
+<ul class="nav nav-pills gap-2 mb-4">
+    <li class="nav-item">
+        <a class="nav-link <?= $status === '' ? 'active' : 'bg-white border' ?>" href="?page=staff">
+            <i class="bi bi-grid-fill me-1"></i> Semua Pengajuan
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?= $status === 'diajukan' ? 'active' : 'bg-white border' ?>" href="?page=staff&status=diajukan">
+            <i class="bi bi-plus-circle-fill me-1"></i> Belum Diproses
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?= $status === 'diverifikasi' ? 'active' : 'bg-white border' ?>" href="?page=staff&status=diverifikasi">
+            <i class="bi bi-check-circle-fill me-1 text-success"></i> Sudah Terverifikasi
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link <?= $status === 'revisi' ? 'active' : 'bg-white border' ?>" href="?page=staff&status=revisi">
+            <i class="bi bi-arrow-counterclockwise me-1 text-warning"></i> Perlu Revisi
+        </a>
+    </li>
+</ul>
+
 <!-- Filter & Search -->
-<div class="card mb-4">
+<div class="card mb-4 shadow-sm border-0">
     <div class="card-body py-3">
-        <form method="GET" class="row g-3 align-items-end">
+        <form method="GET" class="row g-3 align-items-center">
             <input type="hidden" name="page" value="staff">
-            <div class="col-md-5">
+            <input type="hidden" name="status" value="<?= e($status) ?>">
+            <div class="col-md-9">
                 <div class="search-box">
                     <i class="bi bi-search"></i>
                     <input type="text" class="form-control" name="search"
-                           value="<?= e($search) ?>" placeholder="Cari nama, NIM, atau judul...">
+                           value="<?= e($search) ?>" placeholder="Cari nama mahasiswa, NIM, atau judul skripsi...">
                 </div>
-            </div>
-            <div class="col-md-4">
-                <select class="form-select" name="status">
-                    <option value="">-- Semua Status --</option>
-                    <?php foreach (STATUS_LABELS as $key => $val): ?>
-                    <option value="<?= $key ?>" <?= $status === $key ? 'selected' : '' ?>>
-                        <?= $val['label'] ?>
-                    </option>
-                    <?php endforeach; ?>
-                </select>
             </div>
             <div class="col-md-3">
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="bi bi-funnel me-1"></i>Filter
+                    <i class="bi bi-funnel me-1"></i>Terapkan Pencarian
                 </button>
             </div>
         </form>
     </div>
 </div>
+
 
 <div class="card">
     <div class="card-header d-flex justify-content-between">

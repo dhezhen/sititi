@@ -29,7 +29,8 @@ require BASE_PATH . '/views/layouts/header.php';
                 <select class="form-select" name="status">
                     <option value="">-- Semua Status --</option>
                     <option value="diverifikasi"  <?= $status === 'diverifikasi'  ? 'selected' : '' ?>>Diverifikasi</option>
-                    <option value="direview"      <?= $status === 'direview'      ? 'selected' : '' ?>>Sedang Direview</option>
+                    <option value="direview"      <?= $status === 'direview'      ? 'selected' : '' ?>>Menunggu Review Dewan</option>
+                    <option value="direview_dewan"<?= $status === 'direview_dewan'? 'selected' : '' ?>>Telah Direview Dewan</option>
                     <option value="disetujui"     <?= $status === 'disetujui'     ? 'selected' : '' ?>>Disetujui</option>
                     <option value="ditolak"       <?= $status === 'ditolak'       ? 'selected' : '' ?>>Ditolak</option>
                     <option value="revisi"        <?= $status === 'revisi'        ? 'selected' : '' ?>>Revisi</option>
@@ -71,7 +72,7 @@ require BASE_PATH . '/views/layouts/header.php';
                     <td><?= statusBadge($r['status']) ?></td>
                     <td class="small text-muted"><?= formatTanggal($r['created_at']) ?></td>
                     <td>
-                        <?php if (in_array($r['status'], ['diverifikasi', 'direview'])): ?>
+                        <?php if (in_array($r['status'], ['diverifikasi', 'direview', 'direview_dewan'])): ?>
                         <a href="?page=kaprodi.review&id=<?= $r['id'] ?>" class="btn btn-sm btn-primary">
                             <i class="bi bi-eye me-1"></i>Review
                         </a>

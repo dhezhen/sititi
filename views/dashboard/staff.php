@@ -3,10 +3,17 @@ $pageTitle = 'Dashboard Staff Akademik';
 require BASE_PATH . '/views/layouts/header.php';
 ?>
 
-<div class="page-header">
-    <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item active">Dashboard</li></ol></nav>
-    <h1><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard Staff Akademik</h1>
-    <p>Selamat datang, <strong><?= e(Auth::user()['nama']) ?></strong></p>
+<div class="page-header d-flex align-items-center">
+    <div>
+        <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item active">Dashboard</li></ol></nav>
+        <h1 class="mb-0"><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard Staff Akademik</h1>
+        <p class="mb-0 text-muted">Selamat datang, <strong><?= e(Auth::user()['nama']) ?></strong></p>
+    </div>
+    <div class="ms-auto">
+        <a href="?page=export.excel" class="btn btn-success shadow-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+    </div>
 </div>
 
 <?php renderFlash(); ?>
@@ -25,6 +32,13 @@ require BASE_PATH . '/views/layouts/header.php';
             <div class="stat-value"><?= $diverifikasi ?></div>
             <div class="stat-label">Sudah Diverifikasi</div>
             <i class="bi bi-check-circle stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-primary">
+            <div class="stat-value"><?= $siapFakultasCount ?></div>
+            <div class="stat-label">Siap ke Fakultas</div>
+            <i class="bi bi-send stat-icon"></i>
         </div>
     </div>
 </div>
@@ -107,6 +121,42 @@ require BASE_PATH . '/views/layouts/header.php';
                             <td>
                                 <a href="?page=staff.verifikasi&id=<?= $r['id'] ?>" class="btn btn-sm btn-primary">
                                     <i class="bi bi-clipboard-check me-1"></i>Verifikasi
+                                </a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Tabel Siap ke Fakultas -->
+        <div class="card mt-4 border-success">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-send-check me-2"></i>Pengajuan Siap ke Fakultas (Terbaru)</span>
+                <a href="?page=staff&status=pembimbing_ditentukan" class="btn btn-sm btn-light text-success">Lihat Semua</a>
+            </div>
+            <div class="card-body p-0">
+                <?php if (empty($siapFakultas)): ?>
+                <div class="empty-state py-4">
+                    <i class="bi bi-check2-all text-success"></i><h5 class="text-success">Belum Ada Data</h5>
+                </div>
+                <?php else: ?>
+                <table class="table table-sititi mb-0">
+                    <thead><tr><th>Mahasiswa</th><th>Judul</th><th>Status</th><th>Aksi</th></tr></thead>
+                    <tbody>
+                        <?php foreach ($siapFakultas as $r): ?>
+                        <tr>
+                            <td>
+                                <div class="fw-semibold"><?= e($r['nama_mahasiswa']) ?></div>
+                                <small class="text-muted"><?= e($r['nim']) ?></small>
+                            </td>
+                            <td><?= e(truncate($r['judul'], 50)) ?></td>
+                            <td><?= statusBadge($r['status']) ?></td>
+                            <td>
+                                <a href="?page=pengajuan.show&id=<?= $r['id'] ?>" class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-eye me-1"></i>Detail
                                 </a>
                             </td>
                         </tr>

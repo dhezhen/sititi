@@ -11,6 +11,22 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
+<?php if ($diverifikasi > 0): ?>
+<div class="alert alert-warning d-flex align-items-center shadow-sm border-warning mb-4" role="alert">
+    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+    <div>
+        <strong>Perhatian!</strong> Terdapat <b><?= $diverifikasi ?> pengajuan</b> yang baru diverifikasi oleh Staff dan menunggu review pertama dari Anda. 
+        <a href="?page=kaprodi" class="alert-link ms-2">Lihat Antrean <i class="bi bi-arrow-right"></i></a>
+    </div>
+</div>
+<?php endif; ?>
+
+<div class="d-flex gap-2 mb-4 flex-wrap">
+    <a href="?page=kaprodi" class="btn btn-primary shadow-sm"><i class="bi bi-journal-check me-2"></i>Mulai Review</a>
+    <a href="?page=staff.siap_fakultas" class="btn btn-outline-primary bg-white shadow-sm"><i class="bi bi-send me-2"></i>Siap Ajukan Fakultas</a>
+    <a href="?page=admin.dosen" class="btn btn-outline-secondary bg-white shadow-sm"><i class="bi bi-people me-2"></i>Kelola Dosen</a>
+</div>
+
 <div class="row g-4 mb-4">
     <div class="col-6 col-md-3">
         <div class="stat-card stat-primary">
@@ -119,6 +135,18 @@ require BASE_PATH . '/views/layouts/header.php';
                             <td><?= e(truncate($r['judul'], 45)) ?></td>
                             <td><span class="badge bg-secondary"><?= e($r['nama_prodi'] ?? '-') ?></span></td>
                             <td>
+                                <?php 
+                                    $diff = strtotime(date('Y-m-d H:i:s')) - strtotime($r['created_at']);
+                                    $days = floor($diff / (60 * 60 * 24));
+                                ?>
+                                <?php if ($days > 3): ?>
+                                    <span class="badge bg-danger text-white mb-2 d-inline-block"><i class="bi bi-clock-history me-1"></i>Menunggu <?= $days ?> Hari</span><br>
+                                <?php elseif ($days > 0): ?>
+                                    <span class="badge bg-warning text-dark mb-2 d-inline-block"><i class="bi bi-clock-history me-1"></i>Menunggu <?= $days ?> Hari</span><br>
+                                <?php else: ?>
+                                    <span class="badge bg-success text-white mb-2 d-inline-block"><i class="bi bi-clock-history me-1"></i>Hari Ini</span><br>
+                                <?php endif; ?>
+                                
                                 <a href="?page=kaprodi.review&id=<?= $r['id'] ?>" class="btn btn-sm btn-primary">
                                     <i class="bi bi-eye me-1"></i>Review
                                 </a>

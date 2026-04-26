@@ -40,18 +40,104 @@ $currentPage = get('page', 'dashboard');
         if (!empty($menus)):
         ?>
         <div class="sidebar-header mt-3"><span class="sidebar-label">MENU AKSES</span></div>
-        <?php foreach ($menus as $m): 
-            // Cek active state
-            // Jika $currentPage sama persis dengan $m['kode_page'], active
-            // Atau jika startswith (untuk sub-page seperti pengajuan.create vs pengajuan)
-            $isActive = ($currentPage === $m['kode_page']) || (str_starts_with($currentPage, $m['kode_page'].'.'));
+        <?php
+        // Cek apakah ada menu yang pas (exact match)
+        $exactMatch = false;
+        foreach ($menus as $m) {
+            if ($currentPage === $m['kode_page']) {
+                $exactMatch = $m['kode_page'];
+                break;
+            }
+        }
+
+        // Kelompokkan menu berdasarkan prefix (sebelum tanda titik)
+        $tempGroups = [];
+        foreach ($menus as $m) {
+            $group = explode('.', $m['kode_page'])[0];
+            $tempGroups[$group][] = $m;
+        }
+
+        $groupedMenus = ['single' => []];
+        foreach ($tempGroups as $groupKey => $items) {
+            if (count($items) > 1) {
+                $groupedMenus[$groupKey] = $items;
+            } else {
+                $groupedMenus['single'][] = $items[0];
+            }
+        }
+
+        // Label khusus untuk grup menu
+        $groupLabels = [
+            'admin' => ['judul' => 'Data Master', 'icon' => 'bi-database'],
+            'superadmin' => ['judul' => 'Sistem & Keamanan', 'icon' => 'bi-shield-lock'],
+            'staff' => ['judul' => 'Panel Staff', 'icon' => 'bi-building'],
+            'kaprodi' => ['judul' => 'Panel Kaprodi', 'icon' => 'bi-award'],
+            'dewan' => ['judul' => 'Panel Dewan', 'icon' => 'bi-people'],
+            'pengajuan' => ['judul' => 'Skripsi Mahasiswa', 'icon' => 'bi-journal-bookmark']
+        ];
+
+        // Render single menus (tidak punya prefix/grup)
+        if (!empty($groupedMenus['single'])) {
+            foreach ($groupedMenus['single'] as $m) {
+                if ($exactMatch) {
+                    $isActive = ($currentPage === $m['kode_page']);
+                } else {
+                    $isActive = ($currentPage === $m['kode_page']) || (str_starts_with($currentPage, $m['kode_page'].'.'));
+                }
+                ?>
+                <a href="?page=<?= $m['kode_page'] ?>" class="sidebar-item <?= $isActive ? 'active' : '' ?>">
+                    <i class="<?= e($m['icon']) ?>"></i>
+                    <span><?= e($m['judul']) ?></span>
+                </a>
+                <?php
+            }
+        }
+
+        // Render menu dengan grup (dropdown)
+        $groupIdx = 0;
+        foreach ($groupedMenus as $groupKey => $groupItems) {
+            if ($groupKey === 'single') continue;
+            
+            $groupIdx++;
+            $groupTitle = $groupLabels[$groupKey]['judul'] ?? ucfirst($groupKey);
+            $groupIcon = $groupLabels[$groupKey]['icon'] ?? 'bi-folder';
+            
+            // Cek apakah ada menu aktif di dalam grup ini
+            $isGroupActive = false;
+            foreach ($groupItems as $m) {
+                if ($exactMatch) {
+                    if ($currentPage === $m['kode_page']) $isGroupActive = true;
+                } else {
+                    if (($currentPage === $m['kode_page']) || (str_starts_with($currentPage, $m['kode_page'].'.'))) $isGroupActive = true;
+                }
+            }
+            ?>
+            <div class="sidebar-dropdown">
+                <a href="#submenu-<?= $groupIdx ?>" data-bs-toggle="collapse" class="sidebar-item sidebar-dropdown-toggle <?= $isGroupActive ? '' : 'collapsed' ?>" aria-expanded="<?= $isGroupActive ? 'true' : 'false' ?>">
+                    <i class="<?= $groupIcon ?>"></i>
+                    <span><?= $groupTitle ?></span>
+                    <i class="bi bi-chevron-down ms-auto toggle-icon"></i>
+                </a>
+                <div class="collapse <?= $isGroupActive ? 'show' : '' ?>" id="submenu-<?= $groupIdx ?>">
+                    <div class="sidebar-submenu">
+                        <?php foreach ($groupItems as $m): 
+                            if ($exactMatch) {
+                                $isActive = ($currentPage === $m['kode_page']);
+                            } else {
+                                $isActive = ($currentPage === $m['kode_page']) || (str_starts_with($currentPage, $m['kode_page'].'.'));
+                            }
+                        ?>
+                        <a href="?page=<?= $m['kode_page'] ?>" class="submenu-item <?= $isActive ? 'active' : '' ?>">
+                            <i class="<?= e($m['icon']) ?>"></i>
+                            <span><?= e($m['judul']) ?></span>
+                        </a>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+            </div>
+            <?php
+        }
         ?>
-        <a href="?page=<?= $m['kode_page'] ?>"
-           class="sidebar-item <?= $isActive ? 'active' : '' ?>">
-            <i class="<?= e($m['icon']) ?>"></i>
-            <span><?= e($m['judul']) ?></span>
-        </a>
-        <?php endforeach; ?>
         <?php endif; ?>
 
         <!-- Profil Saya (selalu ada, bukan dinamis) -->
@@ -74,7 +160,7 @@ $currentPage = get('page', 'dashboard');
 
         <a href="?page=logout"
            class="sidebar-item text-danger-hover"
-           onclick="return confirm('Yakin logout?')">
+           data-confirm="Apakah Anda yakin ingin keluar dari sistem SITITI?">
             <i class="bi bi-box-arrow-right"></i>
             <span>Logout</span>
         </a>

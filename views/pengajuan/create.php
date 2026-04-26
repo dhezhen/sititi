@@ -59,14 +59,19 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
 
                     <!-- Deskripsi -->
                     <div class="mb-4">
-                        <label for="deskripsi" class="form-label">
+                        <label class="form-label">
                             Deskripsi / Latar Belakang <span class="text-danger">*</span>
                         </label>
-                        <textarea class="form-control" id="deskripsi" name="deskripsi"
-                                  rows="10" required minlength="30"
-                                  placeholder="Jelaskan latar belakang dan tujuan penelitian Anda..."
-                                  data-max="2000"><?= e(post('deskripsi', "1. LATAR BELAKANG\n(Jelaskan fenomena/masalah yang mendasari penelitian Anda)\n\n2. RUMUSAN MASALAH\n(Apa masalah utama yang ingin diselesaikan?)\n\n3. TUJUAN PENELITIAN\n(Apa yang ingin dicapai dari penelitian ini?)\n\n4. METODOLOGI\n(Metode/Algoritma apa yang digunakan? Bagaimana tahapannya?)")) ?></textarea>
-                        <div class="form-text" id="deskripsi_counter">2000 karakter tersisa</div>
+                        <div class="editor-container shadow-sm rounded-3">
+                            <div class="editor" id="quill_editor" data-input="deskripsi" style="min-height: 300px;">
+                                <?= post('deskripsi', "<h3>1. LATAR BELAKANG</h3><p>(Jelaskan fenomena/masalah yang mendasari penelitian Anda)</p><h3>2. RUMUSAN MASALAH</h3><p>(Apa masalah utama yang ingin diselesaikan?)</p><h3>3. TUJUAN PENELITIAN</h3><p>(Apa yang ingin dicapai dari penelitian ini?)</p><h3>4. METODOLOGI</h3><p>(Metode/Algoritma apa yang digunakan? Bagaimana tahapannya?)</p>") ?>
+                            </div>
+                        </div>
+                        <input type="hidden" name="deskripsi" id="deskripsi" value="<?= e(post('deskripsi')) ?>">
+                        <div class="form-text mt-2">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Gunakan formatting di atas untuk memperjelas poin-poin proposal Anda.
+                        </div>
                     </div>
 
                     <!-- Periode -->

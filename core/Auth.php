@@ -163,13 +163,14 @@ class Auth {
     public static function hasMenuAccess(string $page): bool {
         if (!self::check()) return false;
         
-        // Superadmin bypass
-        if (self::role() === ROLE_SUPERADMIN) return true;
+        // Superadmin bypass (jika user memiliki role superadmin di manapun)
+        if (in_array(ROLE_SUPERADMIN, self::roles())) return true;
 
         // Halaman yang selalu diizinkan untuk semua role yang sudah login
         $alwaysAllowed = [
             'dashboard', 'profil', 'profil.update', 
-            'notif', 'notif.read', 'notif.readall', 'logout'
+            'notif', 'notif.read', 'notif.readall', 'logout',
+            'pengajuan.show'
         ];
         if (in_array($page, $alwaysAllowed)) return true;
 

@@ -21,7 +21,8 @@ class DewanController {
     public function index(): void {
         Auth::requireRole(ROLE_DEWAN);
         $search  = get('search', '');
-        $status  = get('status', STATUS_DISETUJUI);
+        $status  = get('status', STATUS_DIREVIEW);
+        if (get('status') === 'all') $status = '';
         $page    = max(1, (int)get('p', 1));
         $perPage = 15;
         $filters = ['search' => $search, 'status' => $status];
@@ -67,15 +68,30 @@ class DewanController {
             redirect('?page=dewan');
         }
 
-        // Aksi: Setujui
-        $this->pengajuanModel->updateStatus($id, STATUS_PEMBIMBING, $catatan ?: 'Proposal disetujui oleh Dewan Bimbingan.');
-        $this->logModel->add($id, $pengajuan['status'], STATUS_PEMBIMBING, Auth::id(),
-                             $catatan ?: 'Proposal disetujui oleh Dewan Bimbingan.');
+        // Aksi: Setujui (Review Dewan Selesai)
+        $this->pengajuanModel->updateStatus($id, STATUS_DIREVIEW_DEWAN, $catatan ?: 'Proposal telah direview oleh Dewan Bimbingan.');
+        $this->logModel->add($id, $pengajuan['status'], STATUS_DIREVIEW_DEWAN, Auth::id(),
+                             $catatan ?: 'Proposal telah direview oleh Dewan Bimbingan.');
+
+        // Notif ke Kaprodi untuk Final Approval
+        $this->notifModel->sendToRole(ROLE_KAPRODI, "Proposal '{$pengajuan['judul']}' telah direview Dewan. Menunggu persetujuan akhir Anda.", $id);
 
         $this->notifModel->send($pengajuan['user_id'],
-            "Proposal Anda telah disetujui oleh Dewan Bimbingan. Segera hubungi pembimbing Anda.", $id);
+            "Proposal Anda telah direview oleh Dewan Bimbingan. Menunggu persetujuan akhir Kaprodi.", $id);
 
         setFlash('success', 'Proposal berhasil disetujui.');
         redirect('?page=dewan');
+    }
+    public function history(): void {
+        Auth::requireRole(ROLE_DEWAN);
+        $search  = get('search', '');
+        $page    = max(1, (int)get('p', 1));
+        $perPage = 15;
+        
+        $total   = $this->pengajuanModel->countReviewedBy(Auth::id(), $search);
+        $pages   = (int)ceil($total / $perPage);
+        $list    = $this->pengajuanModel->getReviewedBy(Auth::id(), $search, $page, $perPage);
+        
+        require BASE_PATH . '/views/dewan/history.php';
     }
 }
