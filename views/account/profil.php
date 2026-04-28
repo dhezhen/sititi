@@ -18,8 +18,14 @@ require BASE_PATH . '/views/layouts/header.php';
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <div class="d-flex align-items-center gap-4 mb-4 pb-4 border-bottom">
-                    <div class="user-avatar" style="width:80px; height:80px; font-size:2rem; flex-shrink:0;">
-                        <?= strtoupper(substr($user['nama'], 0, 1)) ?>
+                    <div class="position-relative">
+                        <div class="user-avatar" style="width:100px; height:100px; font-size:2.5rem; flex-shrink:0; overflow:hidden;">
+                            <?php if (!empty($user['foto'])): ?>
+                                <img src="<?= AVATAR_URL ?>/<?= e($user['foto']) ?>" alt="Profil" style="width:100%; height:100%; object-fit:cover;">
+                            <?php else: ?>
+                                <?= strtoupper(substr($user['nama'], 0, 1)) ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                     <div>
                         <h4 class="mb-1 fw-bold"><?= e($user['nama']) ?></h4>
@@ -33,9 +39,15 @@ require BASE_PATH . '/views/layouts/header.php';
                     </div>
                 </div>
 
-                <form action="?page=profil.update" method="POST">
+                <form action="?page=profil.update" method="POST" enctype="multipart/form-data">
                     <?php csrfField(); ?>
                     
+                    <h6 class="mb-3 text-primary fw-semibold"><i class="bi bi-camera me-2"></i>Foto Profil</h6>
+                    <div class="mb-4">
+                        <input type="file" name="foto" class="form-control" accept="image/*">
+                        <div class="form-text small">Unggah foto profil baru. Format: JPG, JPEG, PNG. Ukuran file akan dikompresi otomatis.</div>
+                    </div>
+
                     <h6 class="mb-3 text-primary fw-semibold"><i class="bi bi-person-lines-fill me-2"></i>Informasi Pribadi</h6>
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">

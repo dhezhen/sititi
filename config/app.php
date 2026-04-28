@@ -13,6 +13,8 @@ define('APP_URL', 'http://localhost/sititi');
 define('BASE_PATH', dirname(__DIR__));
 define('UPLOAD_PATH', BASE_PATH . '/uploads/proposals');
 define('UPLOAD_URL', APP_URL . '/uploads/proposals');
+define('UPLOAD_PATH_AVATAR', BASE_PATH . '/uploads/avatars');
+define('AVATAR_URL', APP_URL . '/uploads/avatars');
 
 // Ukuran maksimal upload (5MB)
 define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024);
@@ -43,12 +45,13 @@ define('STATUS_DISETUJUI',    'disetujui');      // Kaprodi Final Approved
 define('STATUS_PEMBIMBING',   'pembimbing_ditentukan'); // Diajukan ke Fakultas
 define('STATUS_SELESAI',      'selesai');        // SK Siap Dicetak
 define('STATUS_SELESAI_FAKULTAS', 'selesai_fakultas'); // Selesai Diajukan ke Fakultas
+define('STATUS_SK_TERBIT',    'sk_terbit');      // SK Telah Terbit
 
 // Label status untuk tampilan
 define('STATUS_LABELS', [
     'draft'                 => ['label' => 'Draft',                 'class' => 'secondary'],
-    'diajukan'              => ['label' => 'Diajukan',              'class' => 'info'],
-    'diverifikasi'          => ['label' => 'Diverifikasi',          'class' => 'primary'],
+    'diajukan'              => ['label' => 'Menunggu Masukan Pembimbing', 'class' => 'info'],
+    'diverifikasi'          => ['label' => 'Diverifikasi Staff',    'class' => 'primary'],
     'direview'              => ['label' => 'Menunggu Review Dewan', 'class' => 'warning'],
     'direview_dewan'        => ['label' => 'Telah Direview Dewan',  'class' => 'info'],
     'revisi'                => ['label' => 'Perlu Revisi',          'class' => 'warning'],
@@ -56,5 +59,6 @@ define('STATUS_LABELS', [
     'disetujui'             => ['label' => 'Disetujui Kaprodi',     'class' => 'success'],
     'pembimbing_ditentukan' => ['label' => 'Selesai di Tingkat Prodi', 'class' => 'success'],
     'selesai'               => ['label' => 'Siap Diajukan ke Fakultas', 'class' => 'primary'],
-    'selesai_fakultas'      => ['label' => 'Selesai Diajukan ke Fakultas', 'class' => 'dark'],
+    'selesai_fakultas'      => ['label' => 'Selesai Diajukan ke Fakultas', 'class' => 'info'],
+    'sk_terbit'             => ['label' => 'SK Telah Terbit',       'class' => 'success'],
 ]);

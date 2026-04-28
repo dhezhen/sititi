@@ -26,6 +26,22 @@ require BASE_PATH . '/views/layouts/header.php';
                         <td><?= e($pengajuan['nama_prodi'] ?? '-') ?></td></tr>
                     <tr><td class="fw-semibold text-muted">Bidang</td>
                         <td><span class="badge bg-secondary"><?= e($pengajuan['bidang']) ?></span></td></tr>
+                    <tr><td class="fw-semibold text-muted">Usulan Pembimbing</td>
+                        <td>
+                            <div class="small">
+                                <div>1. <?= e($pengajuan['nama_pembimbing_1'] ?: '-') ?></div>
+                                <div>2. <?= e($pengajuan['nama_pembimbing_2'] ?: '-') ?></div>
+                            </div>
+                        </td></tr>
+                    <?php if ($pengajuan['nama_dewan_1']): ?>
+                    <tr><td class="fw-semibold text-muted">Dewan Reviewer</td>
+                        <td>
+                            <div class="small">
+                                <div>1. <?= e($pengajuan['nama_dewan_1']) ?></div>
+                                <div>2. <?= e($pengajuan['nama_dewan_2'] ?: '-') ?></div>
+                            </div>
+                        </td></tr>
+                    <?php endif; ?>
                 </table>
                 <h6 class="fw-bold mb-2 text-muted small">JUDUL</h6>
                 <p class="fw-semibold fs-6 text-primary mb-3"><?= e($pengajuan['judul']) ?></p>
@@ -41,13 +57,6 @@ require BASE_PATH . '/views/layouts/header.php';
                 <?php endif; ?>
             </div>
         </div>
-        
-        <!-- DEBUG INFO: Delete later -->
-        <div class="alert alert-warning">
-            DEBUG STATUS: '<?= $pengajuan['status'] ?>' <br>
-            EXPECTED: '<?= STATUS_DIREVIEW_DEWAN ?>'
-        </div>
-        <!-- END DEBUG INFO -->
 
         <?php if (in_array($pengajuan['status'], [STATUS_DIVERIFIKASI, STATUS_DIREVIEW_DEWAN])): ?>
         <div class="card border-primary">
@@ -61,9 +70,26 @@ require BASE_PATH . '/views/layouts/header.php';
                     <input type="hidden" name="pengajuan_id" value="<?= $pengajuan['id'] ?>">
                     
                     <?php if ($pengajuan['status'] === STATUS_DIVERIFIKASI): ?>
+                    <!-- Masukan Pembimbing -->
                     <div class="mb-4">
-                        <label class="form-label fw-semibold">Penentuan Pembimbing</label>
-                        <div class="row g-3">
+                        <label class="form-label fw-semibold text-primary"><i class="bi bi-chat-left-text me-2"></i>Masukan Pembimbing Awal</label>
+                        <?php 
+                        $catatanPembimbing = (new CatatanBimbingan())->getByPengajuanId($pengajuan['id']);
+                        if (empty($catatanPembimbing)): ?>
+                            <div class="alert alert-light border small py-2">Belum ada masukan dari pembimbing.</div>
+                        <?php else: ?>
+                            <?php foreach ($catatanPembimbing as $cp): ?>
+                            <div class="p-2 rounded bg-light border-start border-primary border-3 mb-2 small">
+                                <div class="fw-bold"><?= e($cp['nama_dosen']) ?>:</div>
+                                <div><?= nl2br(e($cp['catatan'])) ?></div>
+                            </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-primary"><i class="bi bi-people me-2"></i>Penentuan Pembimbing & Dewan</label>
+                        <div class="row g-3 mb-3">
                             <div class="col-md-6">
                                 <label for="pembimbing_1_id" class="form-label small text-muted">Pembimbing Utama</label>
                                 <select class="form-select" id="pembimbing_1_id" name="pembimbing_1_id">
@@ -87,6 +113,26 @@ require BASE_PATH . '/views/layouts/header.php';
                                 </select>
                             </div>
                         </div>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="dewan_1_id" class="form-label small text-muted">Dewan Reviewer 1</label>
+                                <select class="form-select" id="dewan_1_id" name="dewan_1_id" required>
+                                    <option value="">-- Pilih Dewan 1 --</option>
+                                    <?php foreach ($listDewan as $dw): ?>
+                                    <option value="<?= $dw['id'] ?>"><?= e($dw['nama']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="dewan_2_id" class="form-label small text-muted">Dewan Reviewer 2</label>
+                                <select class="form-select" id="dewan_2_id" name="dewan_2_id" required>
+                                    <option value="">-- Pilih Dewan 2 --</option>
+                                    <?php foreach ($listDewan as $dw): ?>
+                                    <option value="<?= $dw['id'] ?>"><?= e($dw['nama']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <?php else: ?>
                         <!-- Status Direview Dewan: Sudah ada pembimbing, tinggal Approve Akhir -->
@@ -94,6 +140,50 @@ require BASE_PATH . '/views/layouts/header.php';
                             <i class="bi bi-info-circle me-2"></i>
                             Proposal telah direview oleh Dewan. Silakan berikan keputusan akhir untuk diajukan ke Fakultas.
                         </div>
+                    <?php endif; ?>
+
+                    <!-- Hasil Review Dewan -->
+                    <?php 
+                    $d1Log = null; $d2Log = null;
+                    foreach ($logs as $l) {
+                        if (isset($pengajuan['dewan_1_id']) && $l['user_id'] == $pengajuan['dewan_1_id']) $d1Log = $l;
+                        if (isset($pengajuan['dewan_2_id']) && $l['user_id'] == $pengajuan['dewan_2_id']) $d2Log = $l;
+                    }
+                    if (($d1Log || $d2Log) || (!empty($pengajuan['dewan_1_id']))):
+                    ?>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold text-info"><i class="bi bi-shield-check me-2"></i>Hasil Review Dewan</label>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="p-3 rounded bg-light border-start border-info border-3 h-100">
+                                    <div class="fw-bold small">Reviewer 1</div>
+                                    <div class="small mb-1 text-primary"><?= e($pengajuan['nama_dewan_1'] ?? '-') ?></div>
+                                    <?php if ($d1Log): ?>
+                                        <div class="mb-2"><?= statusBadge($d1Log['status_baru']) ?></div>
+                                        <div class="bg-white p-2 rounded border small italic">
+                                            <?= (strpos($d1Log['catatan'], '<') !== false) ? $d1Log['catatan'] : nl2br(e($d1Log['catatan'] ?: 'Tidak ada catatan.')) ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary-subtle text-secondary border">Belum Review</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="p-3 rounded bg-light border-start border-info border-3 h-100">
+                                    <div class="fw-bold small">Reviewer 2</div>
+                                    <div class="small mb-1 text-primary"><?= e($pengajuan['nama_dewan_2'] ?? '-') ?></div>
+                                    <?php if ($d2Log): ?>
+                                        <div class="mb-2"><?= statusBadge($d2Log['status_baru']) ?></div>
+                                        <div class="bg-white p-2 rounded border small italic">
+                                            <?= (strpos($d2Log['catatan'], '<') !== false) ? $d2Log['catatan'] : nl2br(e($d2Log['catatan'] ?: 'Tidak ada catatan.')) ?>
+                                        </div>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary-subtle text-secondary border">Belum Review</span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <?php endif; ?>
 
                     <div class="mb-4">

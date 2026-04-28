@@ -345,6 +345,10 @@ body {
     box-shadow: 20px 0 50px rgba(0, 0, 0, 0.2);
   }
 
+  .sidebar-open {
+    overflow: hidden; /* Prevent body scroll when sidebar is open */
+  }
+
   .sidebar-open .sititi-sidebar {
     transform: translateX(0);
   }
@@ -356,6 +360,10 @@ body {
 
   .content-wrapper {
     padding: 20px 15px;
+  }
+
+  .sititi-navbar {
+    padding: 0 10px;
   }
 }
 
@@ -385,7 +393,22 @@ body {
 
 .navbar-brand img {
     filter: brightness(0) invert(1); /* Make logo white for dark navbar */
-    max-height: 32px;
+    max-height: 28px;
+}
+
+@media (max-width: 576px) {
+  .navbar-brand span {
+    font-size: 0.95rem;
+  }
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  .stat-card {
+    padding: 16px;
+  }
+  .stat-card .stat-value {
+    font-size: 1.8rem;
+  }
 }
 
 @media (min-width: 992px) {

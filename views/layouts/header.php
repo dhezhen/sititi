@@ -96,8 +96,12 @@
                 <li class="nav-item dropdown">
                     <a class="nav-link d-flex align-items-center gap-2 user-menu" href="#"
                        id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <div class="user-avatar">
-                            <?= strtoupper(substr(Auth::user()['nama'], 0, 1)) ?>
+                        <div class="user-avatar" style="overflow:hidden;">
+                            <?php if (!empty(Auth::user()['foto'])): ?>
+                                <img src="<?= AVATAR_URL ?>/<?= e(Auth::user()['foto']) ?>" alt="Profil" style="width:100%; height:100%; object-fit:cover;">
+                            <?php else: ?>
+                                <?= strtoupper(substr(Auth::user()['nama'], 0, 1)) ?>
+                            <?php endif; ?>
                         </div>
                         <div class="d-none d-lg-block text-start">
                             <div class="fw-semibold lh-1" style="font-size:.9rem">

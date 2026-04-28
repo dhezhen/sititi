@@ -18,12 +18,14 @@ class Pengajuan {
     public function findById(int $id): ?array {
         $stmt = $this->db->prepare(
             "SELECT pj.*,
-                    u.nama AS nama_mahasiswa, u.email AS email_mahasiswa,
+                    u.nama AS nama_mahasiswa, u.email AS email_mahasiswa, u.foto AS foto_mahasiswa,
                     m.nim, m.angkatan, m.semester,
                     pr.nama AS nama_prodi,
                     per.nama AS nama_periode,
                     d1.nama AS nama_pembimbing_1,
-                    d2.nama AS nama_pembimbing_2
+                    d2.nama AS nama_pembimbing_2,
+                    dw1.nama AS nama_dewan_1,
+                    dw2.nama AS nama_dewan_2
              FROM pengajuan_judul pj
              JOIN users u   ON u.id = pj.user_id
              JOIN mahasiswa m ON m.user_id = pj.user_id
@@ -31,6 +33,8 @@ class Pengajuan {
              LEFT JOIN periode per ON per.id = pj.periode_id
              LEFT JOIN dosen d1    ON d1.id = pj.pembimbing_1_id
              LEFT JOIN dosen d2    ON d2.id = pj.pembimbing_2_id
+             LEFT JOIN users dw1   ON dw1.id = pj.dewan_1_id
+             LEFT JOIN users dw2   ON dw2.id = pj.dewan_2_id
              WHERE pj.id = ? LIMIT 1"
         );
         $stmt->execute([$id]);
@@ -41,6 +45,7 @@ class Pengajuan {
      * Ambil semua pengajuan milik satu mahasiswa
      */
     public function getByUserId(int $userId, int $page = 1, int $perPage = 10): array {
+        if (!$userId) return [];
         $offset = ($page - 1) * $perPage;
         $stmt   = $this->db->prepare(
             "SELECT pj.*, per.nama AS nama_periode
@@ -63,13 +68,20 @@ class Pengajuan {
         return (int)$stmt->fetchColumn();
     }
 
-    /**
-     * Cek apakah mahasiswa sudah memiliki pengajuan aktif (selain ditolak)
-     */
     public function hasActiveSubmission(int $userId): bool {
         $stmt = $this->db->prepare("SELECT COUNT(*) FROM pengajuan_judul WHERE user_id = ? AND status != 'ditolak'");
         $stmt->execute([$userId]);
         return (int)$stmt->fetchColumn() > 0;
+    }
+
+    /**
+     * Ambil pengajuan aktif mahasiswa (yang bukan draft atau ditolak)
+     */
+    public function getActiveSubmission(int $userId): ?array {
+        if (!$userId) return null;
+        $stmt = $this->db->prepare("SELECT * FROM pengajuan_judul WHERE user_id = ? AND status NOT IN ('draft', 'ditolak') ORDER BY created_at DESC LIMIT 1");
+        $stmt->execute([$userId]);
+        return $stmt->fetch() ?: null;
     }
 
     /**
@@ -113,6 +125,11 @@ class Pengajuan {
             $sql    .= " AND m.prodi_id = ?";
             $params[] = $filters['prodi_id'];
         }
+        if (!empty($filters['dewan_id'])) {
+            $sql    .= " AND (pj.dewan_1_id = ? OR pj.dewan_2_id = ?)";
+            $params[] = $filters['dewan_id'];
+            $params[] = $filters['dewan_id'];
+        }
 
         $sql .= " ORDER BY pj.created_at DESC LIMIT $perPage OFFSET $offset";
         $stmt = $this->db->prepare($sql);
@@ -149,6 +166,11 @@ class Pengajuan {
         if (!empty($filters['prodi_id'])) {
             $sql    .= " AND m.prodi_id = ?";
             $params[] = $filters['prodi_id'];
+        }
+        if (!empty($filters['dewan_id'])) {
+            $sql    .= " AND (pj.dewan_1_id = ? OR pj.dewan_2_id = ?)";
+            $params[] = $filters['dewan_id'];
+            $params[] = $filters['dewan_id'];
         }
 
         $stmt = $this->db->prepare($sql);
@@ -191,6 +213,8 @@ class Pengajuan {
             'bidang'           => 'bidang=?',
             'pembimbing_1_id'  => 'pembimbing_1_id=?',
             'pembimbing_2_id'  => 'pembimbing_2_id=?',
+            'dewan_1_id'       => 'dewan_1_id=?',
+            'dewan_2_id'       => 'dewan_2_id=?',
             'file_proposal'    => 'file_proposal=?'
         ];
 
@@ -257,7 +281,7 @@ class Pengajuan {
     public function getStats(?int $userId = null): array {
         $sql    = "SELECT status, COUNT(*) as total FROM pengajuan_judul WHERE 1=1";
         $params = [];
-        if ($userId) {
+        if ($userId !== null) {
             $sql    .= " AND user_id = ?";
             $params[] = $userId;
         }
@@ -349,6 +373,49 @@ class Pengajuan {
         
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function countPendingReview(int $dewanId): int {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(*) FROM pengajuan_judul 
+            WHERE (dewan_1_id = ? OR dewan_2_id = ?)
+            AND status IN ('direview', 'direview_dewan')
+            AND id NOT IN (
+                SELECT pengajuan_id FROM status_log 
+                WHERE user_id = ? AND status_baru IN ('direview_dewan', 'revisi')
+            )
+        ");
+        $stmt->execute([$dewanId, $dewanId, $dewanId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public function getPendingReview(int $dewanId, int $limit = 5): array {
+        $stmt = $this->db->prepare("
+            SELECT pj.*, u.nama AS nama_mahasiswa, m.nim, pr.nama AS nama_prodi
+            FROM pengajuan_judul pj
+            JOIN users u ON u.id = pj.user_id
+            JOIN mahasiswa m ON m.user_id = pj.user_id
+            LEFT JOIN prodi pr ON pr.id = m.prodi_id
+            WHERE (pj.dewan_1_id = ? OR pj.dewan_2_id = ?)
+            AND pj.status IN ('direview', 'direview_dewan')
+            AND pj.id NOT IN (
+                SELECT pengajuan_id FROM status_log 
+                WHERE user_id = ? AND status_baru IN ('direview_dewan', 'revisi')
+            )
+            ORDER BY pj.updated_at ASC
+            LIMIT $limit
+        ");
+        $stmt->execute([$dewanId, $dewanId, $dewanId]);
+        return $stmt->fetchAll();
+    }
+
+    public function countCompletedReview(int $dewanId): int {
+        $stmt = $this->db->prepare("
+            SELECT COUNT(DISTINCT pengajuan_id) FROM status_log 
+            WHERE user_id = ? AND status_baru IN ('direview_dewan', 'revisi')
+        ");
+        $stmt->execute([$dewanId]);
         return (int)$stmt->fetchColumn();
     }
 }

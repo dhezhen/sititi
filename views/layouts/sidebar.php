@@ -73,7 +73,7 @@ $currentPage = get('page', 'dashboard');
             'staff' => ['judul' => 'Panel Staff', 'icon' => 'bi-building'],
             'kaprodi' => ['judul' => 'Panel Kaprodi', 'icon' => 'bi-award'],
             'dewan' => ['judul' => 'Panel Dewan', 'icon' => 'bi-people'],
-            'pengajuan' => ['judul' => 'Skripsi Mahasiswa', 'icon' => 'bi-journal-bookmark']
+            'pengajuan' => ['judul' => 'Mahasiswa', 'icon' => 'bi-journal-bookmark']
         ];
 
         // Render single menus (tidak punya prefix/grup)
@@ -138,6 +138,14 @@ $currentPage = get('page', 'dashboard');
             <?php
         }
         ?>
+
+        <?php endif; ?>
+
+        <?php if ($role === ROLE_DOSEN): ?>
+        <a href="?page=dosen.bimbingan" class="sidebar-item <?= str_starts_with($currentPage, 'dosen.bimbingan') ? 'active' : '' ?>">
+            <i class="bi bi-journal-check"></i>
+            <span>Bimbingan Skripsi</span>
+        </a>
         <?php endif; ?>
 
         <!-- Profil Saya (selalu ada, bukan dinamis) -->

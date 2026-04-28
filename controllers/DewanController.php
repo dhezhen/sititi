@@ -25,7 +25,7 @@ class DewanController {
         if (get('status') === 'all') $status = '';
         $page    = max(1, (int)get('p', 1));
         $perPage = 15;
-        $filters = ['search' => $search, 'status' => $status];
+        $filters = ['search' => $search, 'status' => $status, 'dewan_id' => Auth::id()];
         $total   = $this->pengajuanModel->count($filters);
         $pages   = (int)ceil($total / $perPage);
         $list    = $this->pengajuanModel->getAll($filters, $page, $perPage);
@@ -61,25 +61,49 @@ class DewanController {
                 setFlash('danger', 'Catatan revisi wajib diisi.'); 
                 redirect('?page=dewan.pembimbing&id=' . $id); 
             }
+            // Jika satu dewan minta revisi, langsung status REVISI
             $this->pengajuanModel->updateStatus($id, STATUS_REVISI, $catatan);
             $this->logModel->add($id, $pengajuan['status'], STATUS_REVISI, Auth::id(), $catatan);
-            $this->notifModel->send($pengajuan['user_id'], "Pengajuan perlu direvisi oleh Dewan. Catatan: $catatan", $id);
-            setFlash('warning', 'Pengajuan dikembalikan untuk revisi.');
+            
+            // Notif ke Mahasiswa
+            $this->notifModel->send($pengajuan['user_id'], "Proposal '{$pengajuan['judul']}' memerlukan revisi dari Dewan Reviewer. Catatan: $catatan", $id);
+
+            setFlash('warning', 'Permintaan revisi telah dikirim ke mahasiswa.');
             redirect('?page=dewan');
         }
 
-        // Aksi: Setujui (Review Dewan Selesai)
-        $this->pengajuanModel->updateStatus($id, STATUS_DIREVIEW_DEWAN, $catatan ?: 'Proposal telah direview oleh Dewan Bimbingan.');
-        $this->logModel->add($id, $pengajuan['status'], STATUS_DIREVIEW_DEWAN, Auth::id(),
-                             $catatan ?: 'Proposal telah direview oleh Dewan Bimbingan.');
+        // Aksi: Setujui
+        // Log keputusan dewan ini dulu (Gunakan status_baru = STATUS_DIREVIEW_DEWAN agar terhitung sudah review)
+        $this->logModel->add($id, $pengajuan['status'], STATUS_DIREVIEW_DEWAN, Auth::id(), 
+                             $catatan ?: 'Proposal disetujui oleh Reviewer.');
 
-        // Notif ke Kaprodi untuk Final Approval
-        $this->notifModel->sendToRole(ROLE_KAPRODI, "Proposal '{$pengajuan['judul']}' telah direview Dewan. Menunggu persetujuan akhir Anda.", $id);
+        // Cek apakah dewan lainnya juga sudah setuju
+        $otherDewanId = ($pengajuan['dewan_1_id'] == Auth::id()) ? $pengajuan['dewan_2_id'] : $pengajuan['dewan_1_id'];
+        
+        $bothApproved = false;
+        if (!$otherDewanId) {
+            $bothApproved = true;
+        } else {
+            // Cek apakah dewan lain sudah pernah setuju (cek log)
+            $otherLog = $this->logModel->getLastDecisionByDewan($id, $otherDewanId);
+            if ($otherLog && $otherLog['status_baru'] === STATUS_DIREVIEW_DEWAN) {
+                $bothApproved = true;
+            }
+        }
 
-        $this->notifModel->send($pengajuan['user_id'],
-            "Proposal Anda telah direview oleh Dewan Bimbingan. Menunggu persetujuan akhir Kaprodi.", $id);
+        if ($bothApproved) {
+            // Update status global pengajuan menjadi DIREVIEW_DEWAN
+            $this->pengajuanModel->updateStatus($id, STATUS_DIREVIEW_DEWAN, 'Proposal telah disetujui oleh kedua Dewan Reviewer.');
+            
+            // Notif ke Kaprodi
+            $this->notifModel->sendToRole(ROLE_KAPRODI, "Proposal '{$pengajuan['judul']}' telah disetujui oleh kedua Dewan. Menunggu persetujuan akhir Anda.", $id);
+            
+            setFlash('success', 'Review selesai. Proposal diteruskan ke Kaprodi untuk persetujuan akhir.');
+        } else {
+            // Status global tetap (STATUS_DIREVIEW) agar masih muncul di dashboard dewan lain
+            setFlash('info', 'Keputusan Anda telah disimpan. Menunggu keputusan dari Reviewer lainnya.');
+        }
 
-        setFlash('success', 'Proposal berhasil disetujui.');
         redirect('?page=dewan');
     }
     public function history(): void {

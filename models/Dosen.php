@@ -13,6 +13,15 @@ class Dosen {
     }
 
     /**
+     * Cari dosen berdasarkan email
+     */
+    public function findByEmail(string $email): ?array {
+        $stmt = $this->db->prepare("SELECT * FROM dosen WHERE email = ? LIMIT 1");
+        $stmt->execute([$email]);
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
      * Ambil semua dosen (aktif) untuk dropdown
      */
     public function getAll(bool $activeOnly = false, string $search = '', int $page = 1, int $perPage = 15): array {
@@ -211,6 +220,19 @@ class Dosen {
             }
         }
         return array_values($grouped);
+    }
+
+    /**
+     * Ambil semua dosen aktif dengan total bimbingan dan bidang keahlian
+     */
+    public function getAllWithWorkload(): array {
+        $sql = "SELECT d.id, d.nama, d.nidn, d.bidang_keahlian, d.jabatan_akademik,
+                       (SELECT COUNT(*) FROM pembimbing pb WHERE pb.dosen_id = d.id) as total_bimbingan
+                FROM dosen d
+                WHERE d.is_active = 1
+                ORDER BY d.nama ASC";
+        $stmt = $this->db->query($sql);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     /**

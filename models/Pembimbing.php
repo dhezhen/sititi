@@ -18,9 +18,10 @@ class Pembimbing {
     public function getByPengajuanId(int $pengajuanId): array {
         $stmt = $this->db->prepare(
             "SELECT pb.*, d.nama AS nama_dosen, d.nidn, d.email AS email_dosen,
-                    d.bidang_keahlian
+                    d.bidang_keahlian, u.foto
              FROM pembimbing pb
              JOIN dosen d ON d.id = pb.dosen_id
+             LEFT JOIN users u ON u.email = d.email
              WHERE pb.pengajuan_id = ?
              ORDER BY pb.urutan ASC"
         );

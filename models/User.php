@@ -17,7 +17,7 @@ class User {
      */
     public function findByEmail(string $email): ?array {
         $stmt = $this->db->prepare(
-            "SELECT id, nama, email, password, role, is_active 
+            "SELECT id, nama, email, password, role, is_active, foto 
              FROM users WHERE email = ? LIMIT 1"
         );
         $stmt->execute([$email]);
@@ -29,7 +29,7 @@ class User {
      */
     public function findById(int $id): ?array {
         $stmt = $this->db->prepare(
-            "SELECT id, nama, email, role, is_active, created_at 
+            "SELECT id, nama, email, role, is_active, created_at, foto 
              FROM users WHERE id = ? LIMIT 1"
         );
         $stmt->execute([$id]);
@@ -78,6 +78,22 @@ class User {
     }
 
     /**
+     * Ambil daftar user berdasarkan role (tanpa pagination)
+     */
+    public function getListByRole(string $role): array {
+        $stmt = $this->db->prepare("
+            SELECT DISTINCT u.id, u.nama 
+            FROM users u
+            LEFT JOIN user_roles ur ON ur.user_id = u.id
+            WHERE (u.role = ? OR ur.role_kode = ?) 
+            AND u.is_active = 1 
+            ORDER BY u.nama ASC
+        ");
+        $stmt->execute([$role, $role]);
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Buat user baru
      */
     public function create(array $data): int {
@@ -120,6 +136,10 @@ class User {
         if (isset($data['is_active'])) {
             $fields[] = 'is_active = ?';
             $params[] = (int)$data['is_active'];
+        }
+        if (isset($data['foto'])) {
+            $fields[] = 'foto = ?';
+            $params[] = $data['foto'];
         }
 
         if (empty($fields)) return false;

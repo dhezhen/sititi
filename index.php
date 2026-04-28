@@ -19,7 +19,7 @@ require_once __DIR__ . '/core/Helper.php';
 // ── Autoload Models ──────────────────────────────────────────
 $modelFiles = [
     'User', 'Mahasiswa', 'Dosen', 'Pengajuan',
-    'Pembimbing', 'StatusLog', 'Notifikasi', 'Periode'
+    'Pembimbing', 'StatusLog', 'Notifikasi', 'Periode', 'CatatanBimbingan'
 ];
 foreach ($modelFiles as $model) {
     require_once __DIR__ . "/models/{$model}.php";
@@ -29,7 +29,7 @@ foreach ($modelFiles as $model) {
 $controllerFiles = [
     'AuthController', 'DashboardController', 'PengajuanController',
     'StaffController', 'KaprodiController', 'DewanController', 'AdminController', 'AccountController',
-    'SuperadminController', 'ExportController'
+    'SuperadminController', 'ExportController', 'DosenController'
 ];
 foreach ($controllerFiles as $ctrl) {
     require_once __DIR__ . "/controllers/{$ctrl}.php";
@@ -87,6 +87,18 @@ switch ($page) {
         (new AccountController())->updateProfil();
         break;
 
+    // ── DOSEN ────────────────────────────────────────────────
+    case 'dosen.bimbingan':
+        (new DosenController())->bimbingan();
+        break;
+    case 'dosen.bimbingan.show':
+        (new DosenController())->showBimbingan();
+        break;
+    case 'dosen.bimbingan.catatan':
+        (new DosenController())->storeCatatan();
+        break;
+
+
     // ── DASHBOARD ─────────────────────────────────────────────
     case 'dashboard':
         (new DashboardController())->index();
@@ -101,6 +113,10 @@ switch ($page) {
             // Role lain redirect ke halaman mereka
             redirect('?page=dashboard');
         }
+        break;
+
+    case 'pengajuan.dosen':
+        (new PengajuanController())->dosenList();
         break;
 
     case 'pengajuan.create':
@@ -162,6 +178,14 @@ switch ($page) {
 
     case 'staff.undo_selesai_fakultas':
         (new StaffController())->undoSelesaiFakultas();
+        break;
+
+    case 'staff.mark_sk_terbit':
+        (new StaffController())->markSKTerbit();
+        break;
+
+    case 'staff.undo_sk_terbit':
+        (new StaffController())->undoSKTerbit();
         break;
 
     // ── KAPRODI ───────────────────────────────────────────────

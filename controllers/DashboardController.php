@@ -92,6 +92,17 @@ class DashboardController {
         $notifasi = $notifModel->getByUserId($userId, 5);
         $hasActive = $pengajuanModel->hasActiveSubmission($userId);
 
+        $dosenModel = new Dosen();
+        $listDosen  = $dosenModel->getAllWithWorkload();
+
+        // Ambil pembimbing resmi jika ada (untuk pengajuan yang sudah disetujui/selesai fakultas)
+        $pembimbing = [];
+        $activeSubmission = $pengajuanModel->getActiveSubmission($userId);
+        if ($activeSubmission) {
+            $pbModel = new Pembimbing();
+            $pembimbing = $pbModel->getByPengajuanId($activeSubmission['id']);
+        }
+
         require BASE_PATH . '/views/dashboard/mahasiswa.php';
     }
 
@@ -104,9 +115,12 @@ class DashboardController {
 
         $diajukan    = $pengajuanModel->count(['status' => STATUS_DIAJUKAN]);
         $diverifikasi = $pengajuanModel->count(['status' => STATUS_DIVERIFIKASI]);
-        $siapFakultasCount = $pengajuanModel->count(['status' => STATUS_PEMBIMBING]);
+        $siapFakultasCount = $pengajuanModel->count(['status' => [STATUS_PEMBIMBING, STATUS_SELESAI, STATUS_SELESAI_FAKULTAS]]);
+        $skTerbitCount = $pengajuanModel->count(['status' => STATUS_SK_TERBIT]);
+        
         $recent      = $pengajuanModel->getRecent(5, STATUS_DIAJUKAN);
-        $siapFakultas = $pengajuanModel->getRecent(5, STATUS_PEMBIMBING);
+        $siapFakultas = $pengajuanModel->getRecent(5, [STATUS_PEMBIMBING, STATUS_SELESAI, STATUS_SELESAI_FAKULTAS]);
+        $recentSK    = $pengajuanModel->getRecent(5, STATUS_SK_TERBIT);
         $notifasi    = (new Notifikasi())->getByUserId(Auth::id(), 5);
 
         // Statistik Pengajuan per Angkatan
@@ -138,9 +152,12 @@ class DashboardController {
 
         $diverifikasi = $pengajuanModel->count(['status' => STATUS_DIVERIFIKASI]);
         $direview     = $pengajuanModel->count(['status' => STATUS_DIREVIEW]);
+        $siapAccCount = $pengajuanModel->count(['status' => STATUS_DIREVIEW_DEWAN]);
         $disetujui    = $pengajuanModel->count(['status' => STATUS_DISETUJUI]);
         $ditolak      = $pengajuanModel->count(['status' => STATUS_DITOLAK]);
-        $recent       = $pengajuanModel->getRecent(5, [STATUS_DIVERIFIKASI, STATUS_DIREVIEW_DEWAN]);
+        
+        $recent       = $pengajuanModel->getRecent(10, STATUS_DIVERIFIKASI);
+        $siapAcc      = $pengajuanModel->getRecent(10, STATUS_DIREVIEW_DEWAN);
         $notifasi     = (new Notifikasi())->getByUserId(Auth::id(), 5);
 
         // Statistik Pengajuan per Angkatan (Khusus Prodi Kaprodi)
@@ -204,13 +221,14 @@ class DashboardController {
      */
     private function dewanDashboard(): void {
         $pengajuanModel = new Pengajuan();
+        $dewanId = Auth::id();
 
-        $perluReview = $pengajuanModel->count(['status' => STATUS_DIREVIEW]);
-        $telahReview = $pengajuanModel->count(['status' => STATUS_DIREVIEW_DEWAN]);
-        $totalProses = $pengajuanModel->count(['status' => STATUS_PEMBIMBING]);
+        $perluReview = $pengajuanModel->countPendingReview($dewanId);
+        $telahReview = $pengajuanModel->countCompletedReview($dewanId);
+        $totalProses = $pengajuanModel->count(['status' => STATUS_PEMBIMBING, 'dewan_id' => $dewanId]);
         
-        $recent   = $pengajuanModel->getRecent(5, STATUS_DIREVIEW);
-        $notifasi = (new Notifikasi())->getByUserId(Auth::id(), 5);
+        $recent   = $pengajuanModel->getPendingReview($dewanId, 5);
+        $notifasi = (new Notifikasi())->getByUserId($dewanId, 5);
 
         require BASE_PATH . '/views/dashboard/dewan.php';
     }

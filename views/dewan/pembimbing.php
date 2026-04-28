@@ -42,6 +42,39 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
 
+        <!-- Masukan Terdahulu -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white py-3 border-0">
+                <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-chat-left-dots me-2 text-primary"></i>Masukan Terdahulu</h6>
+            </div>
+            <div class="card-body pt-0">
+                <div class="mb-3">
+                    <label class="small text-muted fw-bold text-uppercase d-block mb-2">Masukan Calon Pembimbing</label>
+                    <?php 
+                    $catatanPembimbing = (new CatatanBimbingan())->getByPengajuanId($pengajuan['id']);
+                    if (empty($catatanPembimbing)): ?>
+                        <div class="alert alert-light border small py-1">Belum ada masukan dari pembimbing.</div>
+                    <?php else: ?>
+                        <?php foreach ($catatanPembimbing as $cp): ?>
+                        <div class="p-2 rounded bg-light border-start border-primary border-3 mb-2 small" style="font-size: 0.85rem;">
+                            <span class="fw-bold text-primary"><?= e($cp['nama_dosen']) ?>:</span> <?= nl2br(e($cp['catatan'])) ?>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <div class="mb-0">
+                    <label class="small text-muted fw-bold text-uppercase d-block mb-2">Masukan Kaprodi</label>
+                    <div class="p-3 rounded-3 bg-primary bg-opacity-10 border-start border-primary border-3">
+                        <div class="small fw-bold text-primary mb-1">Catatan Kaprodi:</div>
+                        <div class="small text-dark">
+                            <?= !empty($pengajuan['catatan_terakhir']) ? nl2br(e($pengajuan['catatan_terakhir'])) : '<em class="text-muted">Tidak ada catatan spesifik dari kaprodi.</em>' ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Form Pembimbing -->
         <div class="card border-primary">
             <div class="card-header bg-primary text-white"><i class="bi bi-chat-text-fill me-2"></i>Review & Keputusan Dewan</div>

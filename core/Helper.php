@@ -164,6 +164,62 @@ function uploadProposal(array $file): array {
 }
 
 /**
+ * Upload dan Kompres Gambar Profil
+ */
+function uploadAndCompressImage(array $file, string $targetDir, int $maxWidth = 300): array {
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        return ['success' => false, 'error' => 'Terjadi kesalahan saat upload file.'];
+    }
+
+    $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+    if (!in_array($file['type'], $allowedTypes)) {
+        return ['success' => false, 'error' => 'Hanya file JPG, JPEG, dan PNG yang diizinkan.'];
+    }
+
+    if (!is_dir($targetDir)) {
+        mkdir($targetDir, 0755, true);
+    }
+
+    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = 'profile_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+    $destPath = $targetDir . '/' . $filename;
+
+    // Proses Kompresi
+    list($width, $height) = getimagesize($file['tmp_name']);
+    $ratio = $width / $height;
+    
+    if ($width > $maxWidth) {
+        $newWidth = $maxWidth;
+        $newHeight = $maxWidth / $ratio;
+    } else {
+        $newWidth = $width;
+        $newHeight = $height;
+    }
+
+    $src = ($file['type'] == 'image/png') ? imagecreatefrompng($file['tmp_name']) : imagecreatefromjpeg($file['tmp_name']);
+    $dst = imagecreatetruecolor($newWidth, $newHeight);
+
+    // Handle transparency for PNG
+    if ($file['type'] == 'image/png') {
+        imagealphablending($dst, false);
+        imagesavealpha($dst, true);
+    }
+
+    imagecopyresampled($dst, $src, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
+
+    if ($file['type'] == 'image/png') {
+        imagepng($dst, $destPath, 6); // Scale 0-9
+    } else {
+        imagejpeg($dst, $destPath, 80); // Quality 0-100
+    }
+
+    imagedestroy($src);
+    imagedestroy($dst);
+
+    return ['success' => true, 'filename' => $filename];
+}
+
+/**
  * Hitung jumlah notifikasi yang belum dibaca untuk user aktif
  */
 function countUnreadNotif(): int {

@@ -63,6 +63,22 @@ class AccountController {
             'email' => $email
         ];
 
+        // Handle Foto Upload
+        if (isset($_FILES['foto']) && $_FILES['foto']['error'] !== UPLOAD_ERR_NO_FILE) {
+            $upload = uploadAndCompressImage($_FILES['foto'], UPLOAD_PATH_AVATAR);
+            if ($upload['success']) {
+                $updateData['foto'] = $upload['filename'];
+                
+                // Hapus foto lama jika ada
+                if (!empty($user['foto']) && file_exists(UPLOAD_PATH_AVATAR . '/' . $user['foto'])) {
+                    unlink(UPLOAD_PATH_AVATAR . '/' . $user['foto']);
+                }
+            } else {
+                setFlash('danger', $upload['error']);
+                redirect('?page=profil');
+            }
+        }
+
         if (!empty($password)) {
             $updateData['password'] = $password;
         }
@@ -71,6 +87,9 @@ class AccountController {
             // Update session data
             $_SESSION['user']['nama']  = $nama;
             $_SESSION['user']['email'] = $email;
+            if (isset($updateData['foto'])) {
+                $_SESSION['user']['foto'] = $updateData['foto'];
+            }
             
             setFlash('success', 'Profil berhasil diperbarui.');
         } else {

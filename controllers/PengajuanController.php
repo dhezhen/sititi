@@ -34,6 +34,18 @@ class PengajuanController {
     }
 
     /**
+     * Daftar Dosen Pembimbing (untuk Mahasiswa)
+     */
+    public function dosenList(): void {
+        Auth::requireRole(ROLE_MAHASISWA);
+
+        $dosenModel = new Dosen();
+        $listDosen  = $dosenModel->getAllWithWorkload();
+
+        require BASE_PATH . '/views/pengajuan/dosen_list.php';
+    }
+
+    /**
      * Form buat pengajuan baru
      */
     public function create(): void {
@@ -51,7 +63,7 @@ class PengajuanController {
         $periode = $stmt->fetch();
         
         $dosenModel = new Dosen();
-        $listDosen  = $dosenModel->getActiveList();
+        $listDosen  = $dosenModel->getAllWithWorkload();
 
         require BASE_PATH . '/views/pengajuan/create.php';
     }
@@ -161,6 +173,9 @@ class PengajuanController {
         $pbModel   = new Pembimbing();
         $logs      = $logModel->getByPengajuanId($id);
         $pembimbing = $pbModel->getByPengajuanId($id);
+        
+        $catatanModel = new CatatanBimbingan();
+        $catatanBimbingan = $catatanModel->getByPengajuanId($id);
 
         require BASE_PATH . '/views/pengajuan/show.php';
     }
@@ -194,7 +209,7 @@ class PengajuanController {
         $periode = $stmt->fetch();
 
         $dosenModel = new Dosen();
-        $listDosen  = $dosenModel->getActiveList();
+        $listDosen  = $dosenModel->getAllWithWorkload();
 
         require BASE_PATH . '/views/pengajuan/edit.php';
     }

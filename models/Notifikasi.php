@@ -45,6 +45,7 @@ class Notifikasi {
      * Ambil notifikasi user (yang belum dibaca duluan)
      */
     public function getByUserId(int $userId, int $limit = 20): array {
+        if (!$userId) return [];
         $stmt = $this->db->prepare(
             "SELECT n.*, pj.judul AS judul_pengajuan
              FROM notifikasi n

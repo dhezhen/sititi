@@ -98,9 +98,13 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                                 <option value="">-- Pilih Pembimbing 1 --</option>
                                 <?php foreach ($listDosen as $d): 
                                     if (strcasecmp($d['jabatan_akademik'] ?? '', 'Asisten Ahli') === 0) continue; 
+                                    $total = (int)($d['total_bimbingan'] ?? 0);
+                                    $limit = defined('MAX_PEMBIMBING_PER_ANGKATAN') ? MAX_PEMBIMBING_PER_ANGKATAN : 10;
+                                    $sisa  = max(0, $limit - $total);
+                                    $bidang = e(truncate($d['bidang_keahlian'] ?? '-', 30));
                                 ?>
-                                <option value="<?= $d['id'] ?>" <?= post('pembimbing_1_id') == $d['id'] ? 'selected' : '' ?>>
-                                    <?= e($d['nama']) ?>
+                                <option value="<?= $d['id'] ?>" <?= post('pembimbing_1_id') == $d['id'] ? 'selected' : '' ?> <?= $sisa == 0 ? 'disabled' : '' ?>>
+                                    <?= e($d['nama']) ?> | [<?= $bidang ?>] | (Sisa Slot: <?= $sisa ?>)
                                 </option>
                                 <?php endforeach; ?>
                             </select>
@@ -109,9 +113,14 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                             <label for="pembimbing_2_id" class="form-label">Usulan Pembimbing Pendamping</label>
                             <select class="form-select" id="pembimbing_2_id" name="pembimbing_2_id">
                                 <option value="">-- Pilih Pembimbing 2 --</option>
-                                <?php foreach ($listDosen as $d): ?>
-                                <option value="<?= $d['id'] ?>" <?= post('pembimbing_2_id') == $d['id'] ? 'selected' : '' ?>>
-                                    <?= e($d['nama']) ?>
+                                <?php foreach ($listDosen as $d): 
+                                    $total = (int)($d['total_bimbingan'] ?? 0);
+                                    $limit = defined('MAX_PEMBIMBING_PER_ANGKATAN') ? MAX_PEMBIMBING_PER_ANGKATAN : 10;
+                                    $sisa  = max(0, $limit - $total);
+                                    $bidang = e(truncate($d['bidang_keahlian'] ?? '-', 30));
+                                ?>
+                                <option value="<?= $d['id'] ?>" <?= post('pembimbing_2_id') == $d['id'] ? 'selected' : '' ?> <?= $sisa == 0 ? 'disabled' : '' ?>>
+                                    <?= e($d['nama']) ?> | [<?= $bidang ?>] | (Sisa Slot: <?= $sisa ?>)
                                 </option>
                                 <?php endforeach; ?>
                             </select>

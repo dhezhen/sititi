@@ -39,4 +39,17 @@ class StatusLog {
         $stmt->execute([$pengajuanId]);
         return $stmt->fetchAll();
     }
+
+    /**
+     * Ambil keputusan terakhir dewan tertentu untuk pengajuan tertentu
+     */
+    public function getLastDecisionByDewan(int $pengajuanId, int $userId): ?array {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM status_log 
+             WHERE pengajuan_id = ? AND user_id = ? 
+             ORDER BY created_at DESC LIMIT 1"
+        );
+        $stmt->execute([$pengajuanId, $userId]);
+        return $stmt->fetch() ?: null;
+    }
 }

@@ -37,8 +37,15 @@ require BASE_PATH . '/views/layouts/header.php';
     <div class="col-6 col-md-3">
         <div class="stat-card stat-primary">
             <div class="stat-value"><?= $siapFakultasCount ?></div>
-            <div class="stat-label">Siap ke Fakultas</div>
-            <i class="bi bi-send stat-icon"></i>
+            <div class="stat-label">Di Fakultas</div>
+            <i class="bi bi-building stat-icon"></i>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card stat-dark" style="background:#212529; color:white;">
+            <div class="stat-value"><?= $skTerbitCount ?></div>
+            <div class="stat-label">SK Terbit (Selesai)</div>
+            <i class="bi bi-patch-check-fill stat-icon" style="color:rgba(255,255,255,0.2)"></i>
         </div>
     </div>
 </div>

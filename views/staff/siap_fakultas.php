@@ -201,11 +201,28 @@ require BASE_PATH . '/views/layouts/header.php';
                                 </button>
                             </form>
                             <?php elseif ($r['status'] === STATUS_SELESAI_FAKULTAS): ?>
+                            <form method="POST" action="?page=staff.mark_sk_terbit" class="d-inline"
+                                  onsubmit="return confirm('Tandai SK telah terbit untuk pengajuan ini? Ini adalah tahap akhir.');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="pengajuan_id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-dark" title="SK Terbit">
+                                    <i class="bi bi-patch-check-fill"></i>
+                                </button>
+                            </form>
                             <form method="POST" action="?page=staff.undo_selesai_fakultas" class="d-inline"
                                   onsubmit="return confirm('Batalkan status Selesai Diajukan ke Fakultas? Pengajuan akan kembali ke status Siap Diajukan ke Fakultas.');">
                                 <?= csrfField() ?>
                                 <input type="hidden" name="pengajuan_id" value="<?= $r['id'] ?>">
                                 <button type="submit" class="btn btn-sm btn-warning text-dark" title="Batalkan Selesai Diajukan">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </form>
+                            <?php elseif ($r['status'] === STATUS_SK_TERBIT): ?>
+                            <form method="POST" action="?page=staff.undo_sk_terbit" class="d-inline"
+                                  onsubmit="return confirm('Batalkan status SK Terbit? Pengajuan akan kembali ke status Selesai Diajukan ke Fakultas.');">
+                                <?= csrfField() ?>
+                                <input type="hidden" name="pengajuan_id" value="<?= $r['id'] ?>">
+                                <button type="submit" class="btn btn-sm btn-warning text-dark" title="Batalkan SK Terbit">
                                     <i class="bi bi-arrow-counterclockwise"></i>
                                 </button>
                             </form>

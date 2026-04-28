@@ -104,6 +104,54 @@ require BASE_PATH . '/views/layouts/header.php';
             Pengajuan ini sudah diproses dengan status <strong><?= statusBadge($pengajuan['status']) ?></strong>.
         </div>
         <?php endif; ?>
+
+        <!-- Hasil Review Dewan (untuk transparansi Prodi) -->
+        <?php 
+        $d1Log = null; $d2Log = null;
+        foreach ($logs as $l) {
+            if (isset($pengajuan['dewan_1_id']) && $l['user_id'] == $pengajuan['dewan_1_id']) $d1Log = $l;
+            if (isset($pengajuan['dewan_2_id']) && $l['user_id'] == $pengajuan['dewan_2_id']) $d2Log = $l;
+        }
+        if ($d1Log || $d2Log):
+        ?>
+        <div class="card mb-4 border-0 shadow-sm border-start border-info border-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2 text-info"></i>Hasil Review Dewan Bimbingan</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded bg-light h-100">
+                            <div class="fw-bold small mb-1">Reviewer 1</div>
+                            <div class="fw-semibold small mb-2 text-primary"><?= e($pengajuan['nama_dewan_1'] ?? '-') ?></div>
+                            <?php if ($d1Log): ?>
+                                <div class="mb-2"><?= statusBadge($d1Log['status_baru']) ?></div>
+                                <div class="bg-white p-2 rounded border small italic">
+                                    <?= (strpos($d1Log['catatan'], '<') !== false) ? $d1Log['catatan'] : nl2br(e($d1Log['catatan'] ?: 'Tidak ada catatan.')) ?>
+                                </div>
+                            <?php else: ?>
+                                <span class="badge bg-secondary-subtle text-secondary border">Belum Review</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded bg-light h-100">
+                            <div class="fw-bold small mb-1">Reviewer 2</div>
+                            <div class="fw-semibold small mb-2 text-primary"><?= e($pengajuan['nama_dewan_2'] ?? '-') ?></div>
+                            <?php if ($d2Log): ?>
+                                <div class="mb-2"><?= statusBadge($d2Log['status_baru']) ?></div>
+                                <div class="bg-white p-2 rounded border small italic">
+                                    <?= (strpos($d2Log['catatan'], '<') !== false) ? $d2Log['catatan'] : nl2br(e($d2Log['catatan'] ?: 'Tidak ada catatan.')) ?>
+                                </div>
+                            <?php else: ?>
+                                <span class="badge bg-secondary-subtle text-secondary border">Belum Review</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- Timeline -->

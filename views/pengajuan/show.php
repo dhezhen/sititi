@@ -121,32 +121,30 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
 
-        <!-- Pembimbing (jika sudah ada) -->
         <?php if (!empty($pembimbing)): ?>
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="bi bi-people-fill me-2 text-success"></i>Dosen Pembimbing
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-people-fill me-2 text-success"></i>Dosen Pembimbing</h6>
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     <?php foreach ($pembimbing as $p): ?>
                     <div class="col-md-6">
-                        <div class="p-3 rounded-3 border">
+                        <div class="p-3 rounded-3 border bg-light-subtle">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="user-avatar" style="width:44px;height:44px;font-size:1.1rem;flex-shrink:0">
-                                    <?= strtoupper(substr($p['nama_dosen'], 0, 1)) ?>
+                                <div class="user-avatar" style="width:48px;height:48px;font-size:1.2rem;flex-shrink:0;overflow:hidden;">
+                                    <?php if (!empty($p['foto'])): ?>
+                                        <img src="<?= AVATAR_URL ?>/<?= e($p['foto']) ?>" alt="Dosen" style="width:100%; height:100%; object-fit:cover;">
+                                    <?php else: ?>
+                                        <?= strtoupper(substr($p['nama_dosen'], 0, 1)) ?>
+                                    <?php endif; ?>
                                 </div>
                                 <div>
-                                    <div class="fw-semibold"><?= e($p['nama_dosen']) ?></div>
+                                    <div class="fw-bold text-dark"><?= e($p['nama_dosen']) ?></div>
                                     <div class="text-muted small">NIDN: <?= e($p['nidn']) ?></div>
                                     <span class="badge bg-primary mt-1">Pembimbing <?= $p['urutan'] ?></span>
                                 </div>
                             </div>
-                            <?php if ($p['bidang_keahlian']): ?>
-                            <div class="mt-2 small text-muted">
-                                <i class="bi bi-mortarboard me-1"></i><?= e($p['bidang_keahlian']) ?>
-                            </div>
-                            <?php endif; ?>
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -154,6 +152,111 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
         <?php endif; ?>
+
+        <!-- Keputusan Dewan Reviewer -->
+        <?php 
+        $dewanLogs = array_filter($logs, function($l) use ($pengajuan) {
+            return in_array($l['user_id'], [$pengajuan['dewan_1_id'] ?? 0, $pengajuan['dewan_2_id'] ?? 0]);
+        });
+        if (!empty($dewanLogs) || !empty($pengajuan['dewan_1_id'])): 
+        ?>
+        <div class="card mb-4 border-0 shadow-sm border-start border-info border-4">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2 text-info"></i>Hasil Review Dewan Bimbingan</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <?php 
+                    $d1Log = null;
+                    $d2Log = null;
+                    foreach ($logs as $l) {
+                        if ($l['user_id'] == $pengajuan['dewan_1_id']) $d1Log = $l;
+                        if ($l['user_id'] == $pengajuan['dewan_2_id']) $d2Log = $l;
+                    }
+                    ?>
+                    <!-- Dewan 1 -->
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 border bg-light h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="fw-bold text-dark small">Reviewer 1</span>
+                                <?php if ($d1Log): ?>
+                                    <?= statusBadge($d1Log['status_baru']) ?>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary-subtle text-secondary border">Belum Review</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="fw-semibold small mb-2 text-primary"><?= e($pengajuan['nama_dewan_1'] ?: '-') ?></div>
+                            <?php if ($d1Log && $d1Log['catatan']): ?>
+                                <div class="bg-white p-2 rounded border small italic">
+                                    <?= (strpos($d1Log['catatan'], '<') !== false) ? $d1Log['catatan'] : nl2br(e($d1Log['catatan'])) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <!-- Dewan 2 -->
+                    <div class="col-md-6">
+                        <div class="p-3 rounded-3 border bg-light h-100">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="fw-bold text-dark small">Reviewer 2</span>
+                                <?php if ($d2Log): ?>
+                                    <?= statusBadge($d2Log['status_baru']) ?>
+                                <?php else: ?>
+                                    <span class="badge bg-secondary-subtle text-secondary border">Belum Review</span>
+                                <?php endif; ?>
+                            </div>
+                            <div class="fw-semibold small mb-2 text-primary"><?= e($pengajuan['nama_dewan_2'] ?: '-') ?></div>
+                            <?php if ($d2Log && $d2Log['catatan']): ?>
+                                <div class="bg-white p-2 rounded border small italic">
+                                    <?= (strpos($d2Log['catatan'], '<') !== false) ? $d2Log['catatan'] : nl2br(e($d2Log['catatan'])) ?>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Masukan Pembimbing -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-chat-right-dots-fill me-2 text-primary"></i>Masukan & Saran Pembimbing</h6>
+            </div>
+            <div class="card-body">
+                <?php if (empty($catatanBimbingan)): ?>
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-chat-dots fs-2 d-block mb-2 opacity-25"></i>
+                    <p class="small mb-0">Belum ada masukan dari pembimbing.</p>
+                </div>
+                <?php else: ?>
+                <div class="timeline">
+                    <?php foreach ($catatanBimbingan as $c): ?>
+                    <div class="timeline-item mb-4">
+                        <div class="timeline-dot bg-primary"></div>
+                        <div class="timeline-content p-3 border-0 bg-light-subtle border-start border-primary border-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="user-avatar" style="width:24px; height:24px; font-size:0.7rem;">
+                                        <?php if (!empty($c['foto_dosen'])): ?>
+                                            <img src="<?= AVATAR_URL ?>/<?= e($c['foto_dosen']) ?>" alt="Dosen" style="width:100%; height:100%; object-fit:cover;">
+                                        <?php else: ?>
+                                            <?= strtoupper(substr($c['nama_dosen'], 0, 1)) ?>
+                                        <?php endif; ?>
+                                    </div>
+                                    <span class="fw-bold small text-primary"><?= e($c['nama_dosen']) ?></span>
+                                </div>
+                                <span class="text-muted small" style="font-size: 0.75rem;"><i class="bi bi-clock me-1"></i><?= formatTanggal($c['created_at'], true) ?></span>
+                            </div>
+                            <div class="text-dark small">
+                                <?= nl2br(e($c['catatan'])) ?>
+                            </div>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 
     <!-- Timeline Status -->

@@ -50,6 +50,7 @@ class StaffController {
         }
 
         $logs = (new StatusLog())->getByPengajuanId($id);
+        $catatan = (new CatatanBimbingan())->getByPengajuanId($id);
 
         require BASE_PATH . '/views/staff/verifikasi.php';
     }
@@ -64,7 +65,7 @@ class StaffController {
         $page    = max(1, (int)get('p', 1));
         $perPage = 15;
 
-        $filters = ['search' => $search, 'status' => [STATUS_PEMBIMBING, STATUS_SELESAI, STATUS_SELESAI_FAKULTAS]];
+        $filters = ['search' => $search, 'status' => [STATUS_PEMBIMBING, STATUS_SELESAI, STATUS_SELESAI_FAKULTAS, STATUS_SK_TERBIT]];
         $total   = $this->pengajuanModel->count($filters);
         $pages   = (int)ceil($total / $perPage);
         $list    = $this->pengajuanModel->getAll($filters, $page, $perPage);
@@ -242,6 +243,61 @@ class StaffController {
         $this->notifModel->send($pengajuan['user_id'], "Status pengajuan Anda dikembalikan menjadi Siap Diajukan ke Fakultas.", $id);
 
         setFlash('warning', 'Status "Selesai Diajukan ke Fakultas" berhasil dibatalkan.');
+        redirect('?page=staff.siap_fakultas');
+    }
+
+    /**
+     * Tandai SK Telah Terbit (Tahap Final)
+     */
+    public function markSKTerbit(): void {
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
+
+        if (!isPost()) redirect('?page=staff.siap_fakultas');
+        verifyCsrf();
+
+        $id = (int)post('pengajuan_id');
+        $pengajuan = $this->pengajuanModel->findById($id);
+
+        if (!$pengajuan || $pengajuan['status'] !== STATUS_SELESAI_FAKULTAS) {
+            setFlash('danger', 'Data tidak valid atau status tidak sesuai.');
+            redirect('?page=staff.siap_fakultas');
+        }
+
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE pengajuan_judul SET status = ? WHERE id = ?");
+        $stmt->execute([STATUS_SK_TERBIT, $id]);
+
+        $this->logModel->add($id, $pengajuan['status'], STATUS_SK_TERBIT, Auth::id(), 'SK Dekan telah terbit. Proses pengajuan judul selesai sepenuhnya.');
+        $this->notifModel->send($pengajuan['user_id'], "Selamat! SK Dekan untuk judul skripsi Anda telah terbit. Silakan hubungi prodi untuk pengambilan.", $id);
+
+        setFlash('success', 'Status pengajuan berhasil diubah menjadi SK Telah Terbit.');
+        redirect('?page=staff.siap_fakultas');
+    }
+
+    /**
+     * Batalkan status SK Terbit
+     */
+    public function undoSKTerbit(): void {
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]);
+
+        if (!isPost()) redirect('?page=staff.siap_fakultas');
+        verifyCsrf();
+
+        $id = (int)post('pengajuan_id');
+        $pengajuan = $this->pengajuanModel->findById($id);
+
+        if (!$pengajuan || $pengajuan['status'] !== STATUS_SK_TERBIT) {
+            setFlash('danger', 'Data tidak valid atau status tidak sesuai.');
+            redirect('?page=staff.siap_fakultas');
+        }
+
+        $db = getDB();
+        $stmt = $db->prepare("UPDATE pengajuan_judul SET status = ? WHERE id = ?");
+        $stmt->execute([STATUS_SELESAI_FAKULTAS, $id]);
+
+        $this->logModel->add($id, $pengajuan['status'], STATUS_SELESAI_FAKULTAS, Auth::id(), 'Status SK Terbit dibatalkan. Kembali ke tahap Selesai Diajukan ke Fakultas.');
+
+        setFlash('warning', 'Status "SK Telah Terbit" berhasil dibatalkan.');
         redirect('?page=staff.siap_fakultas');
     }
 }

@@ -65,7 +65,9 @@ class KaprodiController {
         if (!$pengajuan) { setFlash('danger', 'Pengajuan tidak ditemukan.'); redirect('?page=kaprodi'); }
         $logs = (new StatusLog())->getByPengajuanId($id);
         $dosenModel = new Dosen();
+        $userModel  = new User();
         $listDosen  = $dosenModel->getActiveList();
+        $listDewan  = $userModel->getListByRole(ROLE_DEWAN);
         require BASE_PATH . '/views/kaprodi/review.php';
     }
 
@@ -83,21 +85,35 @@ class KaprodiController {
         if (!$pengajuan) { setFlash('danger', 'Tidak ditemukan.'); redirect('?page=kaprodi'); }
 
         if ($pengajuan['status'] === STATUS_DIVERIFIKASI) {
-            // Step 1: Kaprodi Assigns Advisor -> Go to Dewan
+            // Step 1: Kaprodi Assigns Advisor & Dewan -> Go to Dewan
             if ($aksi === 'setujui') {
                 if (!$p1) { setFlash('danger', 'Pembimbing 1 wajib ditentukan.'); redirect('?page=kaprodi.review&id=' . $id); }
+                $dw1 = (int)post('dewan_1_id');
+                $dw2 = (int)post('dewan_2_id');
+                if (!$dw1 || !$dw2) { setFlash('danger', 'Kedua Dewan Reviewer wajib ditentukan.'); redirect('?page=kaprodi.review&id=' . $id); }
+
                 $dosenModel = new Dosen();
                 $d1 = $dosenModel->findById($p1);
                 if ($d1 && $d1['jabatan_akademik'] === 'Asisten Ahli') {
                     setFlash('danger', 'Asisten Ahli tidak dapat menjadi Pembimbing 1.'); redirect('?page=kaprodi.review&id=' . $id);
                 }
 
-                $this->pengajuanModel->update($id, ['pembimbing_1_id' => $p1, 'pembimbing_2_id' => $p2]);
+                // Update pembimbing & dewan
+                $this->pengajuanModel->update($id, [
+                    'pembimbing_1_id' => $p1, 
+                    'pembimbing_2_id' => $p2,
+                    'dewan_1_id' => $dw1,
+                    'dewan_2_id' => $dw2
+                ]);
                 (new Pembimbing())->assignAll($id, $p1, $p2);
 
                 $this->pengajuanModel->updateStatus($id, STATUS_DIREVIEW, $catatan ?: 'Menunggu review proposal oleh Dewan.');
                 $this->logModel->add($id, $pengajuan['status'], STATUS_DIREVIEW, Auth::id(), $catatan ?: 'Disetujui Kaprodi & Menunggu Review Dewan.');
-                $this->notifModel->sendToRole(ROLE_DEWAN, "Pengajuan baru menunggu review Dewan.", $id);
+                
+                // Notif ke Dewan spesifik
+                $this->notifModel->send($dw1, "Anda ditugaskan sebagai Dewan Reviewer 1 untuk pengajuan '{$pengajuan['judul']}'.", $id);
+                $this->notifModel->send($dw2, "Anda ditugaskan sebagai Dewan Reviewer 2 untuk pengajuan '{$pengajuan['judul']}'.", $id);
+                
                 setFlash('success', 'Berhasil diteruskan ke Dewan.');
             }
         } elseif ($pengajuan['status'] === STATUS_DIREVIEW_DEWAN) {
