@@ -24,7 +24,7 @@ class Dosen {
     /**
      * Ambil semua dosen (aktif) untuk dropdown
      */
-    public function getAll(bool $activeOnly = false, string $search = '', int $page = 1, int $perPage = 15): array {
+    public function getAll(bool $activeOnly = false, string $search = '', int $page = 1, int $perPage = 15, array $filters = []): array {
         $offset = ($page - 1) * $perPage;
         $sql    = "SELECT d.*, p.nama AS nama_prodi, u.role AS user_role
                    FROM dosen d
@@ -36,11 +36,14 @@ class Dosen {
         if ($activeOnly) {
             $sql .= " AND d.is_active = 1";
         }
-        if ($search) {
-            $sql    .= " AND (d.nama LIKE ? OR d.nidn LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
+        if ($search !== '') {
+            $sql .= ' AND (d.nama LIKE ? OR d.nidn LIKE ? OR d.email LIKE ? OR d.no_hp LIKE ?)';
+            $searchTerm = '%' . $search . '%';
+            array_push($params, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
         }
+        [$filterSql, $filterParams] = $this->buildListFilters($filters);
+        if ($filterSql !== '') $sql .= ' AND ' . $filterSql;
+        array_push($params, ...$filterParams);
 
         $sql .= " ORDER BY d.nama ASC LIMIT $perPage OFFSET $offset";
         $stmt = $this->db->prepare($sql);
@@ -55,10 +58,10 @@ class Dosen {
         $params = [];
         $sql = "SELECT id, nama, nidn, bidang_keahlian, jabatan_akademik";
         if ($angkatan) {
-            $sql .= ", (SELECT COUNT(*) FROM pembimbing pb 
-                        JOIN pengajuan_judul pj ON pj.id = pb.pengajuan_id 
-                        JOIN mahasiswa m ON m.user_id = pj.user_id 
-                        WHERE pb.dosen_id = dosen.id AND m.angkatan = ?) as workload";
+            $sql .= ", (SELECT COUNT(DISTINCT pj.id) FROM pengajuan_judul pj
+                        JOIN mahasiswa m ON m.user_id = pj.user_id
+                        WHERE (pj.pembimbing_1_id = dosen.id OR pj.pembimbing_2_id = dosen.id)
+                          AND m.angkatan = ?) as workload";
             $params[] = $angkatan;
         }
         $sql .= " FROM dosen WHERE is_active = 1 ORDER BY nama ASC";
@@ -114,17 +117,40 @@ class Dosen {
     /**
      * Hitung total dosen
      */
-    public function count(string $search = ''): int {
-        $sql    = "SELECT COUNT(*) FROM dosen WHERE 1=1";
+    public function count(string $search = '', array $filters = []): int {
+        $sql    = "SELECT COUNT(*) FROM dosen d WHERE 1=1";
         $params = [];
-        if ($search) {
-            $sql    .= " AND (nama LIKE ? OR nidn LIKE ?)";
-            $params[] = "%$search%";
-            $params[] = "%$search%";
+        if ($search !== '') {
+            $sql .= ' AND (d.nama LIKE ? OR d.nidn LIKE ? OR d.email LIKE ? OR d.no_hp LIKE ?)';
+            $searchTerm = '%' . $search . '%';
+            array_push($params, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
         }
+        [$filterSql, $filterParams] = $this->buildListFilters($filters);
+        if ($filterSql !== '') $sql .= ' AND ' . $filterSql;
+        array_push($params, ...$filterParams);
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int)$stmt->fetchColumn();
+    }
+
+    private function buildListFilters(array $filters): array {
+        $conditions = [];
+        $params = [];
+        if (!empty($filters['prodi_id'])) {
+            $conditions[] = 'd.prodi_id = ?';
+            $params[] = (int)$filters['prodi_id'];
+        }
+        if (!empty($filters['jabatan_is_empty'])) {
+            $conditions[] = "(d.jabatan_akademik IS NULL OR d.jabatan_akademik = '' OR d.jabatan_akademik = '-')";
+        } elseif (array_key_exists('jabatan_akademik', $filters) && $filters['jabatan_akademik'] !== '') {
+            $conditions[] = 'd.jabatan_akademik = ?';
+            $params[] = $filters['jabatan_akademik'];
+        }
+        if (isset($filters['is_active']) && $filters['is_active'] !== null) {
+            $conditions[] = 'd.is_active = ?';
+            $params[] = (int)$filters['is_active'];
+        }
+        return [implode(' AND ', $conditions), $params];
     }
 
     /**
@@ -172,6 +198,25 @@ class Dosen {
         ]);
     }
 
+    public function bulkUpdate(array $ids, array $data): int {
+        $updates = [];
+        $params = [];
+        if (array_key_exists('jabatan_akademik', $data)) {
+            $updates[] = 'jabatan_akademik = ?';
+            $params[] = $data['jabatan_akademik'];
+        }
+        if (array_key_exists('is_active', $data)) {
+            $updates[] = 'is_active = ?';
+            $params[] = (int)$data['is_active'];
+        }
+        if (!$updates || !$ids) return 0;
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->prepare('UPDATE dosen SET ' . implode(', ', $updates) . " WHERE id IN ($placeholders)");
+        $stmt->execute(array_merge($params, array_map('intval', $ids)));
+        return $stmt->rowCount();
+    }
+
     /**
      * Ambil jumlah bimbingan dosen per angkatan
      */
@@ -191,10 +236,10 @@ class Dosen {
      * Ambil beban kerja semua dosen, di-group berdasarkan dosen_id
      */
     public function getAllWorkloadGrouped(): array {
-        $sql = "SELECT d.id, d.nama, m.angkatan, COUNT(p.id) as total 
-                FROM dosen d 
-                LEFT JOIN pembimbing p ON d.id = p.dosen_id 
-                LEFT JOIN pengajuan_judul pj ON p.pengajuan_id = pj.id 
+        $sql = "SELECT d.id, d.nama, m.angkatan, COUNT(DISTINCT pj.id) as total
+                FROM dosen d
+                LEFT JOIN pengajuan_judul pj
+                    ON (pj.pembimbing_1_id = d.id OR pj.pembimbing_2_id = d.id)
                 LEFT JOIN mahasiswa m ON pj.user_id = m.user_id 
                 WHERE d.is_active = 1 
                 GROUP BY d.id, m.angkatan 
@@ -227,7 +272,8 @@ class Dosen {
      */
     public function getAllWithWorkload(): array {
         $sql = "SELECT d.id, d.nama, d.nidn, d.bidang_keahlian, d.jabatan_akademik,
-                       (SELECT COUNT(*) FROM pembimbing pb WHERE pb.dosen_id = d.id) as total_bimbingan
+                       (SELECT COUNT(DISTINCT pj.id) FROM pengajuan_judul pj
+                        WHERE pj.pembimbing_1_id = d.id OR pj.pembimbing_2_id = d.id) as total_bimbingan
                 FROM dosen d
                 WHERE d.is_active = 1
                 ORDER BY d.nama ASC";

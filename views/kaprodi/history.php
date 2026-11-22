@@ -20,7 +20,6 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
-<!-- Filter -->
 <div class="card mb-4 border-0 shadow-sm">
     <div class="card-body py-4 px-4">
         <form method="GET" class="row g-3 align-items-center">

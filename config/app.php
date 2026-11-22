@@ -7,7 +7,11 @@
 define('APP_NAME', 'Sistem Informasi Pengajuan Judul Skripsi');
 define('APP_FULL_NAME', 'Sistem Informasi Pengajuan Judul Skripsi');
 define('APP_VERSION', '1.0.0');
-define('APP_URL', 'http://localhost/sititi');
+$configuredAppUrl = getenv('APP_URL');
+if ($configuredAppUrl === false || trim($configuredAppUrl) === '') {
+    $configuredAppUrl = $_SERVER['APP_URL'] ?? 'http://localhost/sititi';
+}
+define('APP_URL', rtrim(trim($configuredAppUrl), '/'));
 
 // Path absolut ke root aplikasi
 define('BASE_PATH', dirname(__DIR__));

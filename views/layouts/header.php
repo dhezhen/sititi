@@ -6,32 +6,23 @@
     <meta name="description" content="<?= APP_FULL_NAME ?> - Sistem manajemen pengajuan judul skripsi mahasiswa">
     <title><?= isset($pageTitle) ? e($pageTitle) . ' — ' : '' ?><?= APP_NAME ?></title>
 
-    <!-- Bootstrap 5 CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Quill RTE -->
     <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css?v=<?= time() ?>">
 </head>
 <body>
 
-<!-- Navbar Top -->
 <nav class="navbar navbar-expand-lg navbar-dark sititi-navbar sticky-top">
     <div class="container-fluid px-4">
-        <!-- Hamburger Toggle -->
         <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle Navigation">
             <i class="bi bi-list fs-4"></i>
         </button>
 
-        <!-- Brand -->
         <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="?page=dashboard">
             <img src="assets/img/logo_fkom.png" alt="Logo FKOM" style="height: 35px; width: auto;">
             <span class="ms-1"><?= APP_NAME ?></span>
@@ -44,7 +35,6 @@
         <div class="collapse navbar-collapse" id="mainNav">
             <ul class="navbar-nav ms-auto align-items-center gap-1">
 
-                <!-- Notifikasi -->
                 <?php
                 $unreadCount = countUnreadNotif();
                 ?>
@@ -92,7 +82,6 @@
                     </ul>
                 </li>
 
-                <!-- User Menu -->
                 <li class="nav-item dropdown">
                     <a class="nav-link d-flex align-items-center gap-2 user-menu" href="#"
                        id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -149,13 +138,10 @@
     </div>
 </nav>
 
-<!-- Main Wrapper -->
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="d-flex">
-    <!-- Sidebar -->
     <?php require BASE_PATH . '/views/layouts/sidebar.php'; ?>
 
-    <!-- Content Area -->
     <main class="main-content flex-grow-1">
         <div class="content-wrapper">
 

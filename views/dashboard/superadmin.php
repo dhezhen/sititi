@@ -165,7 +165,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Tabel Rekap Beban Bimbingan -->
 <?php require BASE_PATH . '/views/components/workload_table.php'; ?>
 
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>

@@ -64,7 +64,6 @@ require BASE_PATH . '/views/layouts/header.php';
                     </td>
                 </tr>
 
-                <!-- Modal Edit -->
                 <div class="modal fade" id="editModal<?= $r['id'] ?>" tabindex="-1" aria-hidden="true">
                   <div class="modal-dialog">
                     <div class="modal-content">
@@ -102,7 +101,6 @@ require BASE_PATH . '/views/layouts/header.php';
             </tbody>
         </table>
 
-        <!-- Pagination -->
         <?php if ($pages > 1): ?>
         <div class="d-flex justify-content-center py-3">
             <nav><ul class="pagination pagination-sm mb-0">
@@ -117,7 +115,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Modal Create -->
 <div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">

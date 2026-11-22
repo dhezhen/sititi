@@ -30,7 +30,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                       novalidate id="formPengajuan">
                     <?php csrfField(); ?>
 
-                    <!-- Judul -->
                     <div class="mb-4">
                         <label for="judul" class="form-label">
                             Judul Skripsi <span class="text-danger">*</span>
@@ -42,7 +41,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                         <div class="form-text">Minimal 10 karakter, maksimal 300 karakter.</div>
                     </div>
 
-                    <!-- Bidang -->
                     <div class="mb-4">
                         <label for="bidang" class="form-label">
                             Bidang / Topik <span class="text-danger">*</span>
@@ -57,7 +55,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                         </select>
                     </div>
 
-                    <!-- Deskripsi -->
                     <div class="mb-4">
                         <label class="form-label">
                             Deskripsi / Latar Belakang <span class="text-danger">*</span>
@@ -74,7 +71,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                         </div>
                     </div>
 
-                    <!-- Periode -->
                     <?php if ($periode): ?>
                     <div class="mb-4">
                         <label class="form-label">Periode Pengajuan</label>
@@ -90,7 +86,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                     </div>
                     <?php endif; ?>
 
-                    <!-- Usulan Pembimbing -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label for="pembimbing_1_id" class="form-label">Usulan Pembimbing Utama</label>
@@ -133,7 +128,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                         </div>
                     </div>
 
-                    <!-- Upload Proposal -->
                     <div class="mb-4">
                         <label class="form-label">
                             File Ringkasan Proposal (PDF)
@@ -168,7 +162,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
             </div>
         </div>
 
-        <!-- Info Box -->
         <div class="card mt-4">
             <div class="card-body">
                 <h6 class="fw-semibold"><i class="bi bi-info-circle text-primary me-2"></i>Alur Pengajuan</h6>

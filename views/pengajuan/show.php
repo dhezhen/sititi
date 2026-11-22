@@ -50,7 +50,6 @@ require BASE_PATH . '/views/layouts/header.php';
 <?php renderFlash(); ?>
 
 <div class="row g-4">
-    <!-- Detail Utama -->
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -153,7 +152,6 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
         <?php endif; ?>
 
-        <!-- Keputusan Dewan Reviewer -->
         <?php 
         $dewanLogs = array_filter($logs, function($l) use ($pengajuan) {
             return in_array($l['user_id'], [$pengajuan['dewan_1_id'] ?? 0, $pengajuan['dewan_2_id'] ?? 0]);
@@ -162,7 +160,7 @@ require BASE_PATH . '/views/layouts/header.php';
         ?>
         <div class="card mb-4 border-0 shadow-sm border-start border-info border-4">
             <div class="card-header bg-white py-3">
-                <h6 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2 text-info"></i>Hasil Review Dewan Bimbingan</h6>
+                <h6 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2 text-info"></i>Hasil Review Komisi Tugas Akhir</h6>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -174,7 +172,6 @@ require BASE_PATH . '/views/layouts/header.php';
                         if ($l['user_id'] == $pengajuan['dewan_2_id']) $d2Log = $l;
                     }
                     ?>
-                    <!-- Dewan 1 -->
                     <div class="col-md-6">
                         <div class="p-3 rounded-3 border bg-light h-100">
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -193,7 +190,6 @@ require BASE_PATH . '/views/layouts/header.php';
                             <?php endif; ?>
                         </div>
                     </div>
-                    <!-- Dewan 2 -->
                     <div class="col-md-6">
                         <div class="p-3 rounded-3 border bg-light h-100">
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -217,7 +213,6 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
         <?php endif; ?>
 
-        <!-- Masukan Pembimbing -->
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <h6 class="mb-0 fw-bold"><i class="bi bi-chat-right-dots-fill me-2 text-primary"></i>Masukan & Saran Pembimbing</h6>
@@ -259,7 +254,6 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
     </div>
 
-    <!-- Timeline Status -->
     <div class="col-lg-4">
         <div class="card">
             <div class="card-header">

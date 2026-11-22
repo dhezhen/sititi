@@ -47,18 +47,14 @@ class Mahasiswa {
     /**
      * Ambil semua mahasiswa dengan pagination & search
      */
-    public function getAll(string $search = '', int $page = 1, int $perPage = 15): array {
+    public function getAll(string $search = '', int $page = 1, int $perPage = 15, array $filters = []): array {
         $offset = ($page - 1) * $perPage;
         $sql    = "SELECT m.*, u.nama, u.email, u.is_active, p.nama AS nama_prodi
                    FROM mahasiswa m
                    JOIN users u ON u.id = m.user_id
                    LEFT JOIN prodi p ON p.id = m.prodi_id";
-        $params = [];
-
-        if ($search) {
-            $sql    .= " WHERE u.nama LIKE ? OR m.nim LIKE ?";
-            $params  = ["%$search%", "%$search%"];
-        }
+        [$where, $params] = $this->buildListFilters($search, $filters);
+        if ($where !== '') $sql .= ' WHERE ' . $where;
 
         $sql .= " ORDER BY u.nama ASC LIMIT $perPage OFFSET $offset";
         $stmt = $this->db->prepare($sql);
@@ -69,16 +65,36 @@ class Mahasiswa {
     /**
      * Hitung total mahasiswa
      */
-    public function count(string $search = ''): int {
+    public function count(string $search = '', array $filters = []): int {
         $sql    = "SELECT COUNT(*) FROM mahasiswa m JOIN users u ON u.id = m.user_id";
-        $params = [];
-        if ($search) {
-            $sql    .= " WHERE u.nama LIKE ? OR m.nim LIKE ?";
-            $params  = ["%$search%", "%$search%"];
-        }
+        [$where, $params] = $this->buildListFilters($search, $filters);
+        if ($where !== '') $sql .= ' WHERE ' . $where;
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int)$stmt->fetchColumn();
+    }
+
+    private function buildListFilters(string $search, array $filters): array {
+        $conditions = [];
+        $params = [];
+        if ($search !== '') {
+            $conditions[] = '(u.nama LIKE ? OR m.nim LIKE ? OR u.email LIKE ? OR m.no_hp LIKE ?)';
+            $searchTerm = '%' . $search . '%';
+            array_push($params, $searchTerm, $searchTerm, $searchTerm, $searchTerm);
+        }
+        if (!empty($filters['prodi_id'])) {
+            $conditions[] = 'm.prodi_id = ?';
+            $params[] = (int)$filters['prodi_id'];
+        }
+        if (!empty($filters['angkatan'])) {
+            $conditions[] = 'm.angkatan = ?';
+            $params[] = (int)$filters['angkatan'];
+        }
+        if (isset($filters['is_active']) && $filters['is_active'] !== null) {
+            $conditions[] = 'u.is_active = ?';
+            $params[] = (int)$filters['is_active'];
+        }
+        return [implode(' AND ', $conditions), $params];
     }
 
     /**

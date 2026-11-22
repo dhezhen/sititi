@@ -257,6 +257,10 @@
                 </button>
             </div>
 
+            <div class="text-end mb-3">
+                <a href="?page=password.forgot" class="small">Lupa kata sandi?</a>
+            </div>
+
             <button type="submit" class="btn btn-login w-100" id="btnLogin">
                 Masuk Sekarang
             </button>

@@ -1,5 +1,12 @@
 <?php
 $pageTitle = 'Data Dosen';
+$filterParams = array_filter([
+    'search' => $search,
+    'prodi_id' => $prodiId,
+    'jabatan' => $jabatan,
+    'status' => $status,
+], static fn($value) => $value !== '' && $value !== null);
+$canBulkManage = in_array(Auth::role(), [ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN], true);
 require BASE_PATH . '/views/layouts/header.php';
 ?>
 
@@ -25,23 +32,84 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-table me-2"></i>Daftar Dosen</span>
-        <form action="" method="GET" class="d-flex gap-2">
-            <input type="hidden" name="page" value="admin.dosen">
-            <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari NIDN / Nama..." value="<?= e($search) ?>">
-            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+        <span><i class="bi bi-table me-2" aria-hidden="true"></i>Daftar Dosen</span>
+        <span class="small text-muted"><?= number_format((int)$total) ?> dosen</span>
+    </div>
+    <div class="card-body border-bottom">
+        <form action="?page=admin.dosen" method="GET" aria-label="Filter daftar dosen">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label for="lecturerSearch" class="form-label">Pencarian</label>
+                    <input type="search" id="lecturerSearch" name="search" class="form-control" placeholder="Nama, NIDN, email, atau no. HP" value="<?= e($search) ?>">
+                </div>
+                <div class="col-12 col-md-2">
+                    <label for="lecturerProdi" class="form-label">Program studi</label>
+                    <select id="lecturerProdi" name="prodi_id" class="form-select">
+                        <option value="">Semua prodi</option>
+                        <?php foreach ($prodiList as $prodi): ?>
+                        <option value="<?= (int)$prodi['id'] ?>" <?= $prodiId === (int)$prodi['id'] ? 'selected' : '' ?>><?= e($prodi['nama']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label for="lecturerRank" class="form-label">Jabatan akademik</label>
+                    <select id="lecturerRank" name="jabatan" class="form-select">
+                        <option value="">Semua jabatan</option>
+                        <option value="__none" <?= $jabatan === '__none' ? 'selected' : '' ?>>Belum diisi</option>
+                        <?php foreach ($jabatanList as $rank): ?>
+                        <option value="<?= e($rank) ?>" <?= $jabatan === $rank ? 'selected' : '' ?>><?= e(ucwords(strtolower($rank))) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="lecturerStatus" class="form-label">Status dosen</label>
+                    <select id="lecturerStatus" name="status" class="form-select">
+                        <option value="">Semua</option>
+                        <option value="aktif" <?= $status === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                        <option value="nonaktif" <?= $status === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
+                    </select>
+                </div>
+                <div class="col-6 col-md-1 d-grid">
+                    <button type="submit" class="btn btn-primary" aria-label="Terapkan filter">
+                        <i class="bi bi-search" aria-hidden="true"></i><span class="d-md-none ms-2">Filter</span>
+                    </button>
+                </div>
+            </div>
+            <?php if (!empty($filterParams)): ?>
+            <div class="mt-2"><a href="?page=admin.dosen">Hapus filter</a></div>
+            <?php endif; ?>
         </form>
     </div>
+    <?php if ($canBulkManage): ?>
+    <form id="bulkDosenForm" action="?page=admin.dosen.bulk" method="POST">
+        <?php csrfField(); ?>
+    </form>
+    <div class="card-body border-bottom d-flex flex-wrap align-items-center gap-2">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="bulkEditButton" data-bs-toggle="modal" data-bs-target="#bulkEditModal" form="bulkDosenForm" disabled>
+            <i class="bi bi-pencil-square me-1" aria-hidden="true"></i>Edit massal
+        </button>
+        <button type="submit" class="btn btn-sm btn-outline-danger" id="bulkDeleteButton" name="bulk_action" value="delete" form="bulkDosenForm" disabled>
+            <i class="bi bi-trash me-1" aria-hidden="true"></i>Hapus terpilih
+        </button>
+        <span id="bulkSelectionCount" class="small text-muted" aria-live="polite">Pilih dosen pada halaman ini.</span>
+        <span class="small text-muted">Penghapusan juga menghapus akun terkait dan relasi pembimbing.</span>
+    </div>
+    <?php endif; ?>
     <div class="card-body p-0">
+        <div class="table-responsive">
         <table class="table table-sititi mb-0">
             <thead>
                 <tr>
+                    <?php if ($canBulkManage): ?>
+                    <th scope="col" style="width:44px"><input type="checkbox" class="form-check-input" id="selectAllDosen" aria-label="Pilih semua dosen pada halaman ini"></th>
+                    <?php endif; ?>
                     <th style="width:40px">#</th>
                     <th>NIDN</th>
                     <th>Nama Lengkap</th>
                     <th>Program Studi</th>
+                    <th>Jabatan Akademik</th>
                     <th>Bidang Keahlian</th>
-                    <th>Status</th>
+                    <th>Status Dosen</th>
                     <th>Role</th>
                     <th style="width:110px">Aksi</th>
                 </tr>
@@ -49,11 +117,16 @@ require BASE_PATH . '/views/layouts/header.php';
             <tbody>
                 <?php if (empty($list)): ?>
                 <tr>
-                    <td colspan="7" class="text-center py-4 text-muted">Belum ada data dosen.</td>
+                    <td colspan="<?= $canBulkManage ? 10 : 9 ?>" class="text-center py-4 text-muted">
+                        <?= $total > 0 ? 'Tidak ada dosen yang cocok dengan filter.' : 'Belum ada data dosen.' ?>
+                    </td>
                 </tr>
                 <?php else: ?>
                 <?php $no = ($page - 1) * $perPage + 1; foreach ($list as $r): ?>
                 <tr>
+                    <?php if ($canBulkManage): ?>
+                    <td><input type="checkbox" class="form-check-input lecturer-row-select" name="ids[]" value="<?= (int)$r['id'] ?>" form="bulkDosenForm" aria-label="Pilih <?= e($r['nama']) ?>"></td>
+                    <?php endif; ?>
                     <td class="text-muted"><?= $no++ ?></td>
                     <td class="fw-semibold"><?= e($r['nidn']) ?></td>
                     <td>
@@ -63,6 +136,7 @@ require BASE_PATH . '/views/layouts/header.php';
                         <?php endif; ?>
                     </td>
                     <td><?= e($r['nama_prodi'] ?? '-') ?></td>
+                    <td><?= e($r['jabatan_akademik'] ? ucwords(strtolower($r['jabatan_akademik'])) : '-') ?></td>
                     <td><span class="badge bg-secondary"><?= e($r['bidang_keahlian'] ?? '-') ?></span></td>
                     <td>
                         <?php if ($r['is_active']): ?>
@@ -90,7 +164,6 @@ require BASE_PATH . '/views/layouts/header.php';
                     </td>
                 </tr>
 
-                <!-- Modal Edit per Row -->
                 <div class="modal fade" id="editModal<?= $r['id'] ?>" tabindex="-1" aria-hidden="true">
                   <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -164,21 +237,18 @@ require BASE_PATH . '/views/layouts/header.php';
                                     <label class="form-label">Role User <span class="text-danger">*</span></label>
                                     <div class="d-flex flex-wrap gap-3">
                                         <?php 
-                                            $currentRoles = $r['user_roles'] ?? [$r['user_role']];
-                                            $availableRoles = [
-                                                'dosen'   => 'Dosen (Pembimbing)',
-                                                'dewan'   => 'Dewan (Reviewer)',
-                                                'kaprodi' => 'Kaprodi',
-                                                'staff'   => 'Staff'
-                                            ];
-                                            foreach ($availableRoles as $code => $label):
+                                            $currentRoles = is_array($r['user_roles'] ?? null) ? $r['user_roles'] : [];
+                                            if (empty($currentRoles) && !empty($r['user_role'])) $currentRoles = [$r['user_role']];
+                                            foreach ($roleList as $roleIndex => $roleOption):
+                                                $code = (string)$roleOption['kode'];
+                                                $roleId = 'role_' . (int)$r['id'] . '_' . (int)$roleIndex;
                                         ?>
                                         <div class="form-check">
                                             <input class="form-check-input" type="checkbox" 
                                                    <?= Auth::role() === ROLE_SUPERADMIN ? 'name="roles[]"' : 'disabled' ?> 
-                                                   value="<?= $code ?>" id="role_<?= $code ?>_<?= $r['id'] ?>" 
+                                                   value="<?= e($code) ?>" id="<?= e($roleId) ?>" 
                                                    <?= in_array($code, $currentRoles) ? 'checked' : '' ?>>
-                                            <label class="form-check-input-label" for="role_<?= $code ?>_<?= $r['id'] ?>"><?= $label ?></label>
+                                            <label class="form-check-label" for="<?= e($roleId) ?>"><?= e($roleOption['nama']) ?></label>
                                         </div>
                                         <?php endforeach; ?>
                                     </div>
@@ -205,14 +275,14 @@ require BASE_PATH . '/views/layouts/header.php';
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
 
-        <!-- Pagination -->
         <?php if ($pages > 1): ?>
         <div class="d-flex justify-content-center py-3">
             <nav><ul class="pagination pagination-sm mb-0">
                 <?php for ($i = 1; $i <= $pages; $i++): ?>
                 <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="?page=admin.dosen&p=<?= $i ?>&search=<?= urlencode($search) ?>"><?= $i ?></a>
+                    <a class="page-link" href="?page=admin.dosen&amp;<?= e(http_build_query(array_merge($filterParams, ['p' => $i]))) ?>" aria-label="Halaman <?= $i ?>"><?= $i ?></a>
                 </li>
                 <?php endfor; ?>
             </ul></nav>
@@ -221,7 +291,52 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Modal Import CSV -->
+<?php if ($canBulkManage): ?>
+<div class="modal fade" id="bulkEditModal" tabindex="-1" aria-labelledby="bulkEditModalTitle" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title h5" id="bulkEditModalTitle">Edit dosen terpilih</h2>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted">Centang bidang yang ingin diterapkan ke semua dosen terpilih. Bidang tanpa centang tidak berubah.</p>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="updateBulkRank" name="update_jabatan" value="1" form="bulkDosenForm">
+          <label class="form-check-label fw-semibold" for="updateBulkRank">Ubah jabatan akademik</label>
+        </div>
+        <div class="mb-4">
+          <label for="bulkRank" class="form-label">Jabatan akademik baru</label>
+          <select class="form-select" id="bulkRank" name="bulk_jabatan" form="bulkDosenForm">
+            <option value="">Pilih jabatan</option>
+            <option value="__clear">Hapus jabatan akademik</option>
+            <?php foreach ($jabatanList as $rank): ?>
+            <option value="<?= e($rank) ?>"><?= e(ucwords(strtolower($rank))) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="form-check mb-2">
+          <input class="form-check-input" type="checkbox" id="updateBulkStatus" name="update_status" value="1" form="bulkDosenForm">
+          <label class="form-check-label fw-semibold" for="updateBulkStatus">Ubah status dosen</label>
+        </div>
+        <div>
+          <label for="bulkStatus" class="form-label">Status baru</label>
+          <select class="form-select" id="bulkStatus" name="bulk_status" form="bulkDosenForm">
+            <option value="">Pilih status</option>
+            <option value="1">Aktif</option>
+            <option value="0">Nonaktif</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Batal</button>
+        <button type="submit" class="btn btn-primary" name="bulk_action" value="edit" form="bulkDosenForm">Terapkan perubahan</button>
+      </div>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -259,7 +374,6 @@ require BASE_PATH . '/views/layouts/header.php';
   </div>
 </div>
 
-<!-- Modal Create Manual -->
 <div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -363,5 +477,42 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
   </div>
 </div>
+
+<?php if ($canBulkManage): ?>
+<script>
+(() => {
+    const selectionBoxes = Array.from(document.querySelectorAll('.lecturer-row-select'));
+    const selectAll = document.getElementById('selectAllDosen');
+    const editButton = document.getElementById('bulkEditButton');
+    const deleteButton = document.getElementById('bulkDeleteButton');
+    const selectionCount = document.getElementById('bulkSelectionCount');
+    const bulkForm = document.getElementById('bulkDosenForm');
+
+    const syncSelection = () => {
+        const selected = selectionBoxes.filter((box) => box.checked).length;
+        editButton.disabled = selected === 0;
+        deleteButton.disabled = selected === 0;
+        selectionCount.textContent = selected === 0
+            ? 'Pilih dosen pada halaman ini.'
+            : `${selected} dosen dipilih pada halaman ini.`;
+        selectAll.checked = selected > 0 && selected === selectionBoxes.length;
+        selectAll.indeterminate = selected > 0 && selected < selectionBoxes.length;
+    };
+
+    selectionBoxes.forEach((box) => box.addEventListener('change', syncSelection));
+    selectAll.addEventListener('change', () => {
+        selectionBoxes.forEach((box) => { box.checked = selectAll.checked; });
+        syncSelection();
+    });
+    bulkForm.addEventListener('submit', (event) => {
+        if (event.submitter?.value === 'delete'
+            && !window.confirm(`Hapus ${selectionBoxes.filter((box) => box.checked).length} data dosen, akun terkait, dan relasi pembimbing?`)) {
+            event.preventDefault();
+        }
+    });
+    syncSelection();
+})();
+</script>
+<?php endif; ?>
 
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>

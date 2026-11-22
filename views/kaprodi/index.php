@@ -13,7 +13,6 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
-<!-- Filter -->
 <div class="card mb-4">
     <div class="card-body py-3">
         <form method="GET" class="row g-3 align-items-end">

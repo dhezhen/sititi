@@ -217,7 +217,7 @@ class DashboardController {
     }
 
     /**
-     * Dashboard Dewan Bimbingan Skripsi
+     * Dashboard Komisi Tugas Akhir
      */
     private function dewanDashboard(): void {
         $pengajuanModel = new Pengajuan();

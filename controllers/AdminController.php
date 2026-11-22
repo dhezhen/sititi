@@ -20,7 +20,6 @@ class AdminController {
         $this->periodeModel = new Periode();
     }
 
-    // ── STAFF MANAGEMENT ──────────────────────────────────────────
 
     public function staff(): void {
         Auth::requireRole([ROLE_SUPERADMIN, ROLE_KAPRODI]); // Hanya superadmin yang boleh kelola staff
@@ -122,22 +121,40 @@ class AdminController {
         redirect('?page=admin.staff');
     }
 
-    // ── MAHASISWA ───────────────────────────────────────────────────
 
     public function mahasiswa(): void {
         Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI]); // Staff dan Kaprodi boleh akses
 
-        $search  = get('search', '');
+        $searchInput = get('search', '');
+        $search  = is_string($searchInput) ? trim($searchInput) : '';
         $page    = max(1, (int)get('p', 1));
         $perPage = 15;
-        
-        $total = $this->mhsModel->count($search);
-        $pages = (int)ceil($total / $perPage);
-        $list  = $this->mhsModel->getAll($search, $page, $perPage);
 
-        // Ambil daftar prodi untuk dropdown
+        $prodiInput = get('prodi_id', '');
+        $prodiId = is_string($prodiInput) && ctype_digit($prodiInput) && (int)$prodiInput > 0
+            ? (int)$prodiInput
+            : null;
+        $angkatanInput = get('angkatan', '');
+        $angkatan = is_string($angkatanInput) && preg_match('/^\d{4}$/', $angkatanInput)
+            ? $angkatanInput
+            : '';
+        $statusInput = get('status', '');
+        $status = is_string($statusInput) && in_array($statusInput, ['aktif', 'nonaktif'], true)
+            ? $statusInput
+            : '';
+        $filters = [
+            'prodi_id' => $prodiId,
+            'angkatan' => $angkatan,
+            'is_active' => $status === '' ? null : (int)($status === 'aktif'),
+        ];
+
+        $total = $this->mhsModel->count($search, $filters);
+        $pages = (int)ceil($total / $perPage);
+        $list  = $this->mhsModel->getAll($search, $page, $perPage, $filters);
+
         $db = getDB();
         $prodiList = $db->query("SELECT id, nama, kode FROM prodi ORDER BY nama ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $angkatanList = $db->query("SELECT DISTINCT angkatan FROM mahasiswa ORDER BY angkatan DESC")->fetchAll(PDO::FETCH_COLUMN);
 
         require BASE_PATH . '/views/admin/mahasiswa/index.php';
     }
@@ -265,14 +282,12 @@ class AdminController {
         try {
             $db->beginTransaction();
             
-            // Update User
             $userData = ['nama' => $nama, 'email' => $email];
             if (!empty($password)) {
                 $userData['password'] = $password;
             }
             $this->userModel->update($mhs['user_id'], $userData);
 
-            // Update Mahasiswa
             $this->mhsModel->update($id, [
                 'nim'      => $nim,
                 'angkatan' => $angkatan ?: date('Y'),
@@ -415,7 +430,6 @@ class AdminController {
         redirect('?page=admin.mahasiswa');
     }
 
-    // ── DOSEN ───────────────────────────────────────────────────────
 
     public function dosen(): void {
         Auth::requireLogin();
@@ -424,13 +438,37 @@ class AdminController {
             redirect('?page=403');
         }
 
-        $search  = get('search', '');
+        $searchInput = get('search', '');
+        $search = is_string($searchInput) ? trim($searchInput) : '';
         $page    = max(1, (int)get('p', 1));
         $perPage = 15;
-        
-        $total = $this->dosenModel->count($search);
+
+        $prodiInput = get('prodi_id', '');
+        $prodiId = is_string($prodiInput) && ctype_digit($prodiInput) && (int)$prodiInput > 0
+            ? (int)$prodiInput
+            : null;
+        $jabatanInput = get('jabatan', '');
+        $db = getDB();
+        $jabatanList = $db->query("SELECT DISTINCT jabatan_akademik FROM dosen WHERE jabatan_akademik IS NOT NULL AND jabatan_akademik NOT IN ('', '-') ORDER BY jabatan_akademik ASC")
+            ->fetchAll(PDO::FETCH_COLUMN);
+        $jabatan = is_string($jabatanInput)
+            && ($jabatanInput === '__none' || in_array($jabatanInput, $jabatanList, true))
+            ? $jabatanInput
+            : '';
+        $statusInput = get('status', '');
+        $status = is_string($statusInput) && in_array($statusInput, ['aktif', 'nonaktif'], true)
+            ? $statusInput
+            : '';
+        $filters = [
+            'prodi_id' => $prodiId,
+            'jabatan_akademik' => $jabatan === '__none' ? '' : $jabatan,
+            'jabatan_is_empty' => $jabatan === '__none',
+            'is_active' => $status === '' ? null : (int)($status === 'aktif'),
+        ];
+
+        $total = $this->dosenModel->count($search, $filters);
         $pages = (int)ceil($total / $perPage);
-        $list  = $this->dosenModel->getAll(false, $search, $page, $perPage);
+        $list  = $this->dosenModel->getAll(false, $search, $page, $perPage, $filters);
         
         // Ambil role untuk setiap dosen
         $userModel = new User();
@@ -440,11 +478,103 @@ class AdminController {
         
         $dosenModel = $this->dosenModel; // expose ke view
 
-        // Ambil daftar prodi untuk dropdown
-        $db = getDB();
         $prodiList = $db->query("SELECT id, nama, kode FROM prodi ORDER BY nama ASC")->fetchAll(PDO::FETCH_ASSOC);
+        $roleList = $db->query("SELECT kode, nama FROM roles ORDER BY nama ASC")->fetchAll(PDO::FETCH_ASSOC);
 
         require BASE_PATH . '/views/admin/dosen/index.php';
+    }
+
+    public function bulkDosen(): void {
+        Auth::requireRole([ROLE_STAFF, ROLE_KAPRODI, ROLE_SUPERADMIN]);
+        if (!isPost()) redirect('?page=admin.dosen');
+        verifyCsrf();
+
+        $submittedIds = $_POST['ids'] ?? [];
+        $ids = [];
+        if (is_array($submittedIds)) {
+            foreach ($submittedIds as $submittedId) {
+                if (!is_string($submittedId) && !is_int($submittedId)) continue;
+                $id = filter_var($submittedId, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+                if ($id !== false) $ids[] = $id;
+            }
+            $ids = array_values(array_unique($ids));
+        }
+        if (!$ids || count($ids) > 1000) {
+            setFlash('danger', 'Pilih satu sampai 1.000 dosen untuk diproses.');
+            redirect('?page=admin.dosen');
+        }
+
+        $actionInput = post('bulk_action');
+        $action = is_string($actionInput) ? $actionInput : '';
+        $db = getDB();
+        if ($action === 'edit') {
+            $updates = [];
+            if (post('update_jabatan') === '1') {
+                $jabatanInput = post('bulk_jabatan');
+                $jabatan = is_string($jabatanInput) ? $jabatanInput : '';
+                $jabatanOptions = $db->query("SELECT DISTINCT jabatan_akademik FROM dosen WHERE jabatan_akademik IS NOT NULL AND jabatan_akademik NOT IN ('', '-')")
+                    ->fetchAll(PDO::FETCH_COLUMN);
+                if ($jabatan === '__clear') {
+                    $updates['jabatan_akademik'] = null;
+                } elseif (in_array($jabatan, $jabatanOptions, true)) {
+                    $updates['jabatan_akademik'] = $jabatan;
+                } else {
+                    setFlash('danger', 'Pilih jabatan akademik yang tersedia.');
+                    redirect('?page=admin.dosen');
+                }
+            }
+            if (post('update_status') === '1') {
+                $statusInput = post('bulk_status');
+                $status = is_string($statusInput) ? $statusInput : '';
+                if (!in_array($status, ['0', '1'], true)) {
+                    setFlash('danger', 'Pilih status dosen yang valid.');
+                    redirect('?page=admin.dosen');
+                }
+                $updates['is_active'] = (int)$status;
+            }
+            if (!$updates) {
+                setFlash('danger', 'Pilih minimal satu data yang akan diubah.');
+                redirect('?page=admin.dosen');
+            }
+
+            try {
+                $db->beginTransaction();
+                $changed = $this->dosenModel->bulkUpdate($ids, $updates);
+                $db->commit();
+                setFlash('success', "Perubahan diterapkan. {$changed} data dosen berubah.");
+            } catch (Throwable $e) {
+                if ($db->inTransaction()) $db->rollBack();
+                error_log('Bulk edit dosen gagal: ' . $e->getMessage());
+                setFlash('danger', 'Data dosen gagal diperbarui.');
+            }
+            redirect('?page=admin.dosen');
+        }
+
+        if ($action === 'delete') {
+            try {
+                $db->beginTransaction();
+                foreach ($ids as $id) {
+                    $dosen = $this->dosenModel->findById($id);
+                    if (!$dosen) throw new RuntimeException('Data dosen tidak ditemukan.');
+
+                    $stmt = $db->prepare('SELECT id FROM users WHERE email = ? LIMIT 1 FOR UPDATE');
+                    $stmt->execute([$dosen['email']]);
+                    $userId = $stmt->fetchColumn();
+                    $this->dosenModel->delete($id);
+                    if ($userId) $this->userModel->delete((int)$userId);
+                }
+                $db->commit();
+                setFlash('success', count($ids) . ' data dosen beserta akun terkait berhasil dihapus.');
+            } catch (Throwable $e) {
+                if ($db->inTransaction()) $db->rollBack();
+                error_log('Bulk delete dosen gagal: ' . $e->getMessage());
+                setFlash('danger', 'Penghapusan dibatalkan. Periksa relasi data dosen yang dipilih.');
+            }
+            redirect('?page=admin.dosen');
+        }
+
+        setFlash('danger', 'Aksi massal tidak valid.');
+        redirect('?page=admin.dosen');
     }
 
     public function dosenStore(): void {
@@ -508,10 +638,6 @@ class AdminController {
             // Simpan multiple roles
             $this->userModel->setRoles($userId, $roles);
 
-            // Karena role dewan sudah ada untuk mengurus pembimbing, kita set ke dewan atau biarkan null (but user table need role).
-            // Actually, dosen in this system usually acts as Dewan or Kaprodi. Let's just set it to 'dosen' (even if not strictly in app.php, or use 'dewan').
-            // Wait, looking at app.php, there's no ROLE_DOSEN. We will set role to 'dewan' as a placeholder or we can just update userModel if needed.
-            // Let's check `User.php` role enum if it exists. No enum. We'll set role as 'dewan' so they can login. Or just don't create user if not requested? "termasuk password untuk masuk... dosen mahasiswa staff". Let's use 'dewan' for dosen if they don't have a specific role, or let's just make it 'dosen'.
             
             $this->dosenModel->create([
                 'nama'             => $nama,
@@ -584,6 +710,24 @@ class AdminController {
             $errors[] = 'Email sudah terdaftar pada user lain.';
         }
 
+        $canChangeRoles = Auth::role() === ROLE_SUPERADMIN;
+        $roles = [];
+        if ($canChangeRoles) {
+            $submittedRoles = post('roles', []);
+            if (!is_array($submittedRoles)) {
+                $errors[] = 'Pilihan role tidak valid.';
+            } else {
+                foreach ($submittedRoles as $submittedRole) {
+                    if (is_string($submittedRole) && $submittedRole !== '') $roles[] = $submittedRole;
+                }
+                $roles = array_values(array_unique($roles));
+                $validRoleCodes = array_column($db->query('SELECT kode FROM roles')->fetchAll(PDO::FETCH_ASSOC), 'kode');
+                if (array_diff($roles, $validRoleCodes)) {
+                    $errors[] = 'Pilih role yang tersedia.';
+                }
+            }
+        }
+
         if (!empty($errors)) {
             setFlash('danger', implode('<br>', $errors));
             redirect('?page=admin.dosen');
@@ -593,23 +737,18 @@ class AdminController {
             $db->beginTransaction();
 
                 if ($userId) {
-                    // Update User
                     $userData = ['nama' => $nama, 'email' => $email];
                     if (!empty($password)) {
                         $userData['password'] = $password;
                     }
                     $this->userModel->update($userId, $userData);
 
-                    // Sync Multiple Roles
-                    $roles = post('roles');
-                    if (is_array($roles) && !empty($roles)) {
+                    if ($canChangeRoles && !empty($roles)) {
                         $this->userModel->setRoles($userId, $roles);
                     }
                 } elseif (!empty($password)) {
-                    // Buat user jika belum ada
-                    $roles = post('roles');
-                    if (!is_array($roles) || empty($roles)) {
-                        $roles = [post('role', ROLE_DOSEN)];
+                    if (!$canChangeRoles || empty($roles)) {
+                        $roles = [ROLE_DOSEN];
                     }
                     $newUserId = $this->userModel->create([
                         'nama'     => $nama,
@@ -793,7 +932,6 @@ class AdminController {
         redirect('?page=admin.dosen');
     }
 
-    // ── PERIODE ─────────────────────────────────────────────────────
 
     public function periode(): void {
         Auth::requireRole(ROLE_KAPRODI);

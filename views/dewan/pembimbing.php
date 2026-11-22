@@ -13,7 +13,6 @@ require BASE_PATH . '/views/layouts/header.php';
 <?php renderFlash(); ?>
 <div class="row g-4">
     <div class="col-lg-7">
-        <!-- Info Pengajuan -->
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between">
                 <span><i class="bi bi-file-earmark me-2 text-primary"></i>Data Pengajuan</span>
@@ -42,7 +41,6 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
 
-        <!-- Masukan Terdahulu -->
         <div class="card mb-4 border-0 shadow-sm">
             <div class="card-header bg-white py-3 border-0">
                 <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-chat-left-dots me-2 text-primary"></i>Masukan Terdahulu</h6>
@@ -75,7 +73,6 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
 
-        <!-- Form Pembimbing -->
         <div class="card border-primary">
             <div class="card-header bg-primary text-white"><i class="bi bi-chat-text-fill me-2"></i>Review & Keputusan Dewan</div>
             <div class="card-body">
@@ -124,7 +121,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 
     <div class="col-lg-5">
-        <!-- Pembimbing Aktif Saat Ini -->
         <?php if (!empty($pembimbingAktif)): ?>
         <div class="card mb-4">
             <div class="card-header"><i class="bi bi-person-check me-2 text-success"></i>Pembimbing yang Diusulkan Kaprodi</div>
@@ -149,7 +145,6 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
         <?php endif; ?>
 
-        <!-- Timeline -->
         <div class="card">
             <div class="card-header"><i class="bi bi-activity me-2 text-primary"></i>Riwayat Status</div>
             <div class="card-body">

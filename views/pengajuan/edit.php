@@ -73,7 +73,6 @@ $bidangList = ['Kecerdasan Buatan', 'Jaringan Komputer', 'Rekayasa Perangkat Lun
                         </div>
                     </div>
 
-                    <!-- Usulan Pembimbing -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <label for="pembimbing_1_id" class="form-label">Usulan Pembimbing Utama</label>

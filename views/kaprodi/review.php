@@ -70,7 +70,6 @@ require BASE_PATH . '/views/layouts/header.php';
                     <input type="hidden" name="pengajuan_id" value="<?= $pengajuan['id'] ?>">
                     
                     <?php if ($pengajuan['status'] === STATUS_DIVERIFIKASI): ?>
-                    <!-- Masukan Pembimbing -->
                     <div class="mb-4">
                         <label class="form-label fw-semibold text-primary"><i class="bi bi-chat-left-text me-2"></i>Masukan Pembimbing Awal</label>
                         <?php 
@@ -142,7 +141,6 @@ require BASE_PATH . '/views/layouts/header.php';
                         </div>
                     <?php endif; ?>
 
-                    <!-- Hasil Review Dewan -->
                     <?php 
                     $d1Log = null; $d2Log = null;
                     foreach ($logs as $l) {

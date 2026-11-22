@@ -9,7 +9,6 @@ require BASE_PATH . '/views/layouts/header.php';
 </div>
 
 <div class="row g-4">
-    <!-- Statistik & Kuota -->
     <div class="col-md-4">
         <div class="card bg-primary text-white border-0 shadow-sm h-100">
             <div class="card-body p-4 d-flex flex-column justify-content-center">
@@ -53,7 +52,6 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
     </div>
 
-    <!-- Daftar Mahasiswa Bimbingan -->
     <div class="col-lg-8">
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
@@ -112,7 +110,6 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
     </div>
 
-    <!-- Notifikasi Terakhir -->
     <div class="col-lg-4">
         <div class="card h-100">
             <div class="card-header">

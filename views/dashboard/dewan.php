@@ -1,11 +1,11 @@
 <?php
-$pageTitle = 'Dashboard Dewan Bimbingan';
+$pageTitle = 'Dashboard Komisi Tugas Akhir';
 require BASE_PATH . '/views/layouts/header.php';
 ?>
 
 <div class="page-header">
     <nav aria-label="breadcrumb"><ol class="breadcrumb"><li class="breadcrumb-item active">Dashboard</li></ol></nav>
-    <h1><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard Dewan Bimbingan Skripsi</h1>
+    <h1><i class="bi bi-speedometer2 me-2 text-primary"></i>Dashboard Komisi Tugas Akhir</h1>
     <p>Selamat datang, <strong><?= e(Auth::user()['nama']) ?></strong></p>
 </div>
 
@@ -133,11 +133,10 @@ require BASE_PATH . '/views/layouts/header.php';
             <?php endif; ?>
         </div>
         
-        <!-- Info Card -->
         <div class="card border-0 shadow-sm bg-primary text-white overflow-hidden">
             <div class="card-body position-relative p-4">
                 <div class="position-relative z-1">
-                    <h6 class="fw-bold mb-3">Tugas Dewan Bimbingan</h6>
+                    <h6 class="fw-bold mb-3">Tugas Komisi Tugas Akhir</h6>
                     <p class="small opacity-75 mb-0" style="line-height:1.6">
                         Silakan review proposal yang masuk dan pastikan kesesuaian pembimbing yang telah diajukan oleh Kaprodi sebelum diteruskan untuk persetujuan akhir.
                     </p>

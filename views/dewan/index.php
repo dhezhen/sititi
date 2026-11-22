@@ -10,7 +10,6 @@ require BASE_PATH . '/views/layouts/header.php';
     <h1><i class="bi bi-people-fill me-2 text-primary"></i>Review & Penentuan Pembimbing Skripsi</h1>
 </div>
 <?php renderFlash(); ?>
-<!-- Status Tabs -->
 <ul class="nav nav-pills gap-2 mb-4">
     <li class="nav-item">
         <a class="nav-link <?= $status === STATUS_DIREVIEW ? 'active' : 'bg-white border' ?>" href="?page=dewan&status=direview">
@@ -24,7 +23,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </li>
 </ul>
 
-<!-- Filter -->
 <div class="card mb-4 shadow-sm border-0">
     <div class="card-body py-3">
         <form method="GET" class="row g-3 align-items-center">

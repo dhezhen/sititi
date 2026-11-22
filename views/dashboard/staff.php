@@ -18,7 +18,6 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
-<!-- Stats -->
 <div class="row g-4 mb-4">
     <div class="col-6 col-md-3">
         <div class="stat-card stat-info">
@@ -50,7 +49,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Statistik per Angkatan -->
 <div class="card mb-4">
     <div class="card-header d-flex justify-content-between align-items-center">
         <span><i class="bi bi-graph-up me-2 text-primary"></i>Monitoring Pengajuan Per Angkatan</span>
@@ -138,7 +136,6 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
 
-        <!-- Tabel Siap ke Fakultas -->
         <div class="card mt-4 border-success">
             <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                 <span><i class="bi bi-send-check me-2"></i>Pengajuan Siap ke Fakultas (Terbaru)</span>
@@ -196,7 +193,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Tabel Rekap Beban Bimbingan -->
 <?php require BASE_PATH . '/views/components/workload_table.php'; ?>
 
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>

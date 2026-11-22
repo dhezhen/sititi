@@ -10,7 +10,6 @@ class SuperadminController {
         Auth::requireRole(ROLE_SUPERADMIN);
     }
 
-    // ── ROLES ────────────────────────────────────────────────────────
     
     public function roles(): void {
         $db = getDB();
@@ -57,7 +56,6 @@ class SuperadminController {
         redirect('?page=superadmin.roles');
     }
 
-    // ── MENUS ────────────────────────────────────────────────────────
 
     public function menus(): void {
         $db = getDB();
@@ -98,7 +96,6 @@ class SuperadminController {
         redirect('?page=superadmin.menus');
     }
 
-    // ── ROLE MENUS (HAK AKSES) ───────────────────────────────────────
 
     public function roleMenus(): void {
         $db = getDB();
@@ -150,13 +147,214 @@ class SuperadminController {
         redirect('?page=superadmin.role_menus');
     }
 
-    // ── DATABASE BACKUP ──────────────────────────────────────────────
 
     public function database(): void {
         $db = getDB();
         $tables = $db->query("SHOW TABLE STATUS")->fetchAll(PDO::FETCH_ASSOC);
         $pageTitle = 'Manajemen Database';
         require BASE_PATH . '/views/superadmin/database.php';
+    }
+
+    public function pengumuman(): void {
+        $model = new Pengumuman();
+        $roles = $model->getRoles();
+        $roleNameByCode = array_column($roles, 'nama', 'kode');
+        $pengumumanList = $model->getRecent();
+        $smtpEnabled = (new SMTPSettings())->isEnabled();
+        $mailConfigured = Mailer::isConfigured();
+        $mailFromAddress = Mailer::fromAddress();
+        $pageTitle = 'Pengumuman';
+        require BASE_PATH . '/views/superadmin/pengumuman.php';
+    }
+
+    public function smtpSettings(): void {
+        $smtpModel = new SMTPSettings();
+        $settings = $smtpModel->get();
+        $smtpConfigured = $smtpModel->isConfigured();
+        unset($settings['password'], $settings['password_encrypted']);
+        $pageTitle = 'Pengaturan Email';
+        require BASE_PATH . '/views/superadmin/smtp.php';
+    }
+
+    public function saveSmtpSettings(): void {
+        if (!isPost()) redirect('?page=superadmin.smtp');
+        verifyCsrf();
+
+        $host = trim((string)post('host'));
+        $port = (int)post('port');
+        $encryption = (string)post('encryption');
+        $username = trim((string)post('username'));
+        $password = (string)post('smtp_password');
+        $fromEmail = trim((string)post('from_email'));
+        $fromName = trim((string)post('from_name'));
+        $enabled = post('enabled') === '1';
+        $clearPassword = post('clear_password') === '1';
+
+        $hostValid = strlen($host) <= 253
+            && preg_match('/^[A-Za-z0-9.-]+$/', $host) === 1
+            && !str_contains($host, '..')
+            && !str_starts_with($host, '.')
+            && !str_ends_with($host, '.');
+        if ($host === '' || !$hostValid || $port < 1 || $port > 65535
+            || !in_array($encryption, ['tls', 'ssl', 'none'], true)
+            || ($encryption === 'none' && $username !== '')
+            || strlen($username) > 255
+            || strlen($password) > 2048
+            || !filter_var($fromEmail, FILTER_VALIDATE_EMAIL)
+            || strlen($fromEmail) > 150
+            || strlen($fromName) > 150
+            || preg_match('/[\r\n]/', $fromName)) {
+            setFlash('danger', 'Periksa kembali host, port, keamanan koneksi, dan alamat pengirim. Autentikasi SMTP memerlukan TLS atau SSL.');
+            redirect('?page=superadmin.smtp');
+        }
+
+        try {
+            (new SMTPSettings())->save([
+                'enabled' => $enabled,
+                'host' => $host,
+                'port' => $port,
+                'encryption' => $encryption,
+                'username' => $username,
+                'from_email' => $fromEmail,
+                'from_name' => $fromName,
+            ], $password, $clearPassword);
+            setFlash('success', 'Pengaturan SMTP berhasil disimpan.');
+        } catch (Throwable $e) {
+            error_log('Gagal menyimpan pengaturan SMTP: ' . $e->getMessage());
+            setFlash('danger', 'Pengaturan SMTP tidak tersimpan. Pastikan SMTP_ENCRYPTION_KEY tersedia di server.');
+        }
+        redirect('?page=superadmin.smtp');
+    }
+
+    public function testSmtpSettings(): void {
+        if (!isPost()) redirect('?page=superadmin.smtp');
+        verifyCsrf();
+
+        $testEmail = trim((string)post('test_email'));
+        $smtpModel = new SMTPSettings();
+        if (!filter_var($testEmail, FILTER_VALIDATE_EMAIL)) {
+            setFlash('danger', 'Masukkan alamat email tujuan yang valid.');
+            redirect('?page=superadmin.smtp');
+        }
+        if (!$smtpModel->isConfigured()) {
+            setFlash('danger', 'SMTP belum aktif atau konfigurasinya belum lengkap.');
+            redirect('?page=superadmin.smtp');
+        }
+
+        $body = "Email ini mengonfirmasi bahwa pengaturan SMTP SiTiTi berhasil digunakan.\n\nWaktu pengujian: " . date('d-m-Y H:i:s');
+        if (Mailer::send($testEmail, APP_NAME . ': Email percobaan SMTP', $body)) {
+            setFlash('success', 'Server SMTP menerima email percobaan untuk diproses.');
+        } else {
+            setFlash('danger', 'Email percobaan gagal dikirim. Periksa host, port, keamanan, kredensial, dan log server.');
+        }
+        redirect('?page=superadmin.smtp');
+    }
+
+    public function storePengumuman(): void {
+        if (!isPost()) redirect('?page=superadmin.pengumuman');
+        verifyCsrf();
+
+        $title = trim(post('judul'));
+        $message = trim(post('isi'));
+        $allUsers = post('semua_pengguna') === '1';
+        $sendEmail = post('kirim_email') === '1';
+        $submittedRoles = post('roles', []);
+        $roles = is_array($submittedRoles)
+            ? array_values(array_unique(array_filter(array_map('strval', $submittedRoles))))
+            : [];
+
+        $model = new Pengumuman();
+        $availableRoles = $model->getRoles();
+        $validRoleCodes = array_column($availableRoles, 'kode');
+
+        if ($title === '' || $message === '') {
+            setFlash('danger', 'Judul dan isi pengumuman wajib diisi.');
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        $titleLength = function_exists('mb_strlen') ? mb_strlen($title) : strlen($title);
+        $messageLength = function_exists('mb_strlen') ? mb_strlen($message) : strlen($message);
+        if ($titleLength > 180 || $messageLength > 10000) {
+            setFlash('danger', 'Judul maksimal 180 karakter dan isi maksimal 10.000 karakter.');
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        if (!$allUsers && empty($roles)) {
+            setFlash('danger', 'Pilih semua pengguna atau minimal satu role penerima.');
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        if (array_diff($roles, $validRoleCodes)) {
+            setFlash('danger', 'Pilihan role penerima tidak valid.');
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        if ($allUsers) {
+            $roles = [];
+        }
+
+        $recipients = $model->getRecipients($roles);
+        if (empty($recipients)) {
+            setFlash('danger', 'Tidak ada pengguna aktif pada pilihan penerima tersebut.');
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        try {
+            $announcementId = $model->createAndNotify(
+                $title,
+                $message,
+                $roles,
+                (int)Auth::id(),
+                $sendEmail,
+                $recipients
+            );
+        } catch (Throwable $e) {
+            error_log('Gagal menyimpan pengumuman: ' . $e->getMessage());
+            setFlash('danger', 'Pengumuman gagal disimpan. Silakan coba lagi.');
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        $recipientCount = count($recipients);
+        if (!$sendEmail) {
+            setFlash('success', "Pengumuman dan notifikasi internal telah dikirim ke {$recipientCount} pengguna.");
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        if (!Mailer::isConfigured()) {
+            $model->updateEmailResult($announcementId, 'belum_dikonfigurasi', 0, 0);
+            setFlash(
+                'warning',
+                "Notifikasi internal telah dikirim ke {$recipientCount} pengguna. Email belum dikirim karena MAIL_FROM_ADDRESS belum dikonfigurasi."
+            );
+            redirect('?page=superadmin.pengumuman');
+        }
+
+        $accepted = 0;
+        $failed = 0;
+        $subject = APP_NAME . ': ' . $title;
+        foreach ($recipients as $recipient) {
+            $emailBody = "Halo {$recipient['nama']},\n\n{$message}\n\n" . APP_NAME;
+            if (Mailer::send((string)$recipient['email'], $subject, $emailBody)) {
+                $accepted++;
+            } else {
+                $failed++;
+            }
+        }
+
+        $emailStatus = $accepted === 0
+            ? 'gagal'
+            : ($failed === 0 ? 'diterima' : 'sebagian_gagal');
+        $model->updateEmailResult($announcementId, $emailStatus, $accepted, $failed);
+
+        if ($failed === 0) {
+            setFlash('success', "Notifikasi internal dikirim ke {$recipientCount} pengguna. Server email menerima {$accepted} email untuk diproses.");
+        } else {
+            setFlash(
+                'warning',
+                "Notifikasi internal dikirim ke {$recipientCount} pengguna. Server email menerima {$accepted} email; {$failed} email gagal diserahkan."
+            );
+        }
+        redirect('?page=superadmin.pengumuman');
     }
 
     public function backupDatabase(): void {
@@ -184,7 +382,6 @@ class SuperadminController {
             $res = $db->query("SHOW CREATE TABLE `$table`")->fetch(PDO::FETCH_ASSOC);
             $sql .= $res['Create Table'] . ";\n\n";
 
-            // Get Data
             $stmt = $db->query("SELECT * FROM `$table`");
             $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
@@ -194,7 +391,6 @@ class SuperadminController {
                     $keys = array_keys($row);
                     $values = array_values($row);
                     
-                    // Escape values
                     $escapedValues = array_map(function($v) use ($db) {
                         if ($v === null) return 'NULL';
                         return $db->quote($v);
@@ -210,7 +406,6 @@ class SuperadminController {
 
         $filename = 'backup_db_' . DB_NAME . '_' . date('Ymd_His') . '.sql';
         
-        // Set headers for download
         header('Content-Type: application/sql');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Pragma: no-cache');

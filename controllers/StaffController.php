@@ -87,7 +87,6 @@ class StaffController {
         $aksi    = post('aksi'); // 'lengkap' atau 'tidak_lengkap'
         $catatan = trim(post('catatan'));
 
-        // DEBUG: Log to file
         file_put_contents(BASE_PATH . '/scratch/debug_log.txt', date('Y-m-d H:i:s') . " - ID: $id, AKSI: $aksi, CATATAN: $catatan\n", FILE_APPEND);
 
 

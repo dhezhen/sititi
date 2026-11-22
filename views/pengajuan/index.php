@@ -86,7 +86,6 @@ require BASE_PATH . '/views/layouts/header.php';
             </table>
         </div>
 
-        <!-- Pagination -->
         <?php if ($pages > 1): ?>
         <div class="d-flex justify-content-center py-3">
             <nav><ul class="pagination pagination-sm mb-0">

@@ -1,5 +1,11 @@
 <?php
 $pageTitle = 'Data Mahasiswa';
+$filterParams = array_filter([
+    'search' => $search,
+    'prodi_id' => $prodiId,
+    'angkatan' => $angkatan,
+    'status' => $status,
+], static fn($value) => $value !== '' && $value !== null);
 require BASE_PATH . '/views/layouts/header.php';
 ?>
 
@@ -25,14 +31,55 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-table me-2"></i>Daftar Mahasiswa</span>
-        <form action="" method="GET" class="d-flex gap-2">
-            <input type="hidden" name="page" value="admin.mahasiswa">
-            <input type="text" name="search" class="form-control form-control-sm" placeholder="Cari NIM / Nama..." value="<?= e($search) ?>">
-            <button type="submit" class="btn btn-sm btn-primary"><i class="bi bi-search"></i></button>
+        <span><i class="bi bi-table me-2" aria-hidden="true"></i>Daftar Mahasiswa</span>
+        <span class="small text-muted"><?= number_format((int)$total) ?> mahasiswa</span>
+    </div>
+    <div class="card-body border-bottom">
+        <form action="?page=admin.mahasiswa" method="GET" aria-label="Filter daftar mahasiswa">
+            <div class="row g-2 align-items-end">
+                <div class="col-12 col-md-4">
+                    <label for="studentSearch" class="form-label">Pencarian</label>
+                    <input type="search" id="studentSearch" name="search" class="form-control" placeholder="Nama, NIM, email, atau no. HP" value="<?= e($search) ?>">
+                </div>
+                <div class="col-12 col-md-3">
+                    <label for="studentProdi" class="form-label">Program studi</label>
+                    <select id="studentProdi" name="prodi_id" class="form-select">
+                        <option value="">Semua program studi</option>
+                        <?php foreach ($prodiList as $prodi): ?>
+                        <option value="<?= (int)$prodi['id'] ?>" <?= $prodiId === (int)$prodi['id'] ? 'selected' : '' ?>><?= e($prodi['nama']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="studentYear" class="form-label">Angkatan</label>
+                    <select id="studentYear" name="angkatan" class="form-select">
+                        <option value="">Semua</option>
+                        <?php foreach ($angkatanList as $year): ?>
+                        <option value="<?= e($year) ?>" <?= $angkatan === (string)$year ? 'selected' : '' ?>><?= e($year) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-6 col-md-2">
+                    <label for="studentStatus" class="form-label">Status akun</label>
+                    <select id="studentStatus" name="status" class="form-select">
+                        <option value="">Semua</option>
+                        <option value="aktif" <?= $status === 'aktif' ? 'selected' : '' ?>>Aktif</option>
+                        <option value="nonaktif" <?= $status === 'nonaktif' ? 'selected' : '' ?>>Nonaktif</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-1 d-grid">
+                    <button type="submit" class="btn btn-primary" aria-label="Terapkan filter">
+                        <i class="bi bi-search" aria-hidden="true"></i><span class="d-md-none ms-2">Terapkan filter</span>
+                    </button>
+                </div>
+            </div>
+            <?php if (!empty($filterParams)): ?>
+            <div class="mt-2"><a href="?page=admin.mahasiswa">Hapus filter</a></div>
+            <?php endif; ?>
         </form>
     </div>
     <div class="card-body p-0">
+        <div class="table-responsive">
         <table class="table table-sititi mb-0">
             <thead>
                 <tr>
@@ -41,6 +88,7 @@ require BASE_PATH . '/views/layouts/header.php';
                     <th>Nama Lengkap</th>
                     <th>Program Studi</th>
                     <th>Angkatan</th>
+                    <th>No. HP</th>
                     <th>Status Akun</th>
                     <th style="width:120px">Aksi</th>
                 </tr>
@@ -48,7 +96,9 @@ require BASE_PATH . '/views/layouts/header.php';
             <tbody>
                 <?php if (empty($list)): ?>
                 <tr>
-                    <td colspan="6" class="text-center py-4 text-muted">Belum ada data mahasiswa.</td>
+                    <td colspan="8" class="text-center py-4 text-muted">
+                        <?= $total > 0 ? 'Tidak ada mahasiswa yang cocok dengan filter.' : 'Belum ada data mahasiswa.' ?>
+                    </td>
                 </tr>
                 <?php else: ?>
                 <?php $no = ($page - 1) * $perPage + 1; foreach ($list as $r): ?>
@@ -61,6 +111,17 @@ require BASE_PATH . '/views/layouts/header.php';
                     </td>
                     <td><?= e($r['nama_prodi'] ?? '-') ?></td>
                     <td><?= e($r['angkatan']) ?></td>
+                    <td>
+                        <?php
+                        $phone = trim((string)($r['no_hp'] ?? ''));
+                        $phoneLink = preg_replace('/[^0-9+]/', '', $phone);
+                        ?>
+                        <?php if ($phone !== '' && $phoneLink !== ''): ?>
+                        <a href="tel:<?= e($phoneLink) ?>" aria-label="Telepon <?= e($r['nama']) ?> di <?= e($phone) ?>"><?= e($phone) ?></a>
+                        <?php else: ?>
+                        <span class="text-muted">-</span>
+                        <?php endif; ?>
+                    </td>
                     <td>
                         <?php if ($r['is_active']): ?>
                             <span class="badge bg-success">Aktif</span>
@@ -78,7 +139,6 @@ require BASE_PATH . '/views/layouts/header.php';
                     </td>
                 </tr>
 
-                <!-- Modal Edit -->
                 <div class="modal fade" id="editModal<?= $r['id'] ?>" tabindex="-1" aria-hidden="true">
                   <div class="modal-dialog modal-lg">
                     <div class="modal-content">
@@ -149,14 +209,14 @@ require BASE_PATH . '/views/layouts/header.php';
                 <?php endif; ?>
             </tbody>
         </table>
+        </div>
 
-        <!-- Pagination -->
         <?php if ($pages > 1): ?>
         <div class="d-flex justify-content-center py-3">
             <nav><ul class="pagination pagination-sm mb-0">
                 <?php for ($i = 1; $i <= $pages; $i++): ?>
                 <li class="page-item <?= $i === $page ? 'active' : '' ?>">
-                    <a class="page-link" href="?page=admin.mahasiswa&p=<?= $i ?>&search=<?= urlencode($search) ?>"><?= $i ?></a>
+                    <a class="page-link" href="?page=admin.mahasiswa&amp;<?= e(http_build_query(array_merge($filterParams, ['p' => $i]))) ?>" aria-label="Halaman <?= $i ?>"><?= $i ?></a>
                 </li>
                 <?php endfor; ?>
             </ul></nav>
@@ -165,7 +225,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Modal Import CSV -->
 <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
   <div class="modal-dialog">
     <div class="modal-content">
@@ -202,7 +261,6 @@ require BASE_PATH . '/views/layouts/header.php';
   </div>
 </div>
 
-<!-- Modal Create Manual -->
 <div class="modal fade" id="createModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">

@@ -1,31 +1,28 @@
 <?php
 /**
- * ============================================================
  * SiTiTi — Front Controller / Router Utama
  * File: index.php
  *
  * Semua request masuk melalui file ini.
  * Routing menggunakan query string: ?page=nama_halaman
- * ============================================================
  */
 
-// ── Bootstrap ──────────────────────────────────────────────
 require_once __DIR__ . '/vendor/autoload.php';
 require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/core/Auth.php';
 require_once __DIR__ . '/core/Helper.php';
+require_once __DIR__ . '/core/Mailer.php';
+require_once __DIR__ . '/core/SmtpClient.php';
 
-// ── Autoload Models ──────────────────────────────────────────
 $modelFiles = [
     'User', 'Mahasiswa', 'Dosen', 'Pengajuan',
-    'Pembimbing', 'StatusLog', 'Notifikasi', 'Periode', 'CatatanBimbingan'
+    'Pembimbing', 'StatusLog', 'Notifikasi', 'Periode', 'CatatanBimbingan', 'Pengumuman', 'PasswordReset', 'SMTPSettings'
 ];
 foreach ($modelFiles as $model) {
     require_once __DIR__ . "/models/{$model}.php";
 }
 
-// ── Autoload Controllers ──────────────────────────────────────
 $controllerFiles = [
     'AuthController', 'DashboardController', 'PengajuanController',
     'StaffController', 'KaprodiController', 'DewanController', 'AdminController', 'AccountController',
@@ -35,14 +32,12 @@ foreach ($controllerFiles as $ctrl) {
     require_once __DIR__ . "/controllers/{$ctrl}.php";
 }
 
-// ── Mulai Sesi ───────────────────────────────────────────────
 Auth::startSession();
 
-// ── Router ───────────────────────────────────────────────────
 $page = get('page', 'dashboard');
 
 // Halaman publik (tidak perlu login)
-$publicPages = ['login', 'login.post'];
+$publicPages = ['login', 'login.post', 'password.forgot', 'password.forgot.post', 'password.reset', 'password.reset.post'];
 
 if (!in_array($page, $publicPages) && !Auth::check()) {
     redirect('?page=login');
@@ -53,16 +48,30 @@ if (!in_array($page, $publicPages)) {
     Auth::requireMenuAccess($page);
 }
 
-// ── Dispatch ke controller yang sesuai ───────────────────────
 switch ($page) {
 
-    // ── AUTH ──────────────────────────────────────────────────
     case 'login':
         (new AuthController())->showLogin();
         break;
 
     case 'login.post':
         (new AuthController())->login();
+        break;
+
+    case 'password.forgot':
+        (new AuthController())->showForgotPassword();
+        break;
+
+    case 'password.forgot.post':
+        (new AuthController())->sendPasswordReset();
+        break;
+
+    case 'password.reset':
+        (new AuthController())->showResetPassword();
+        break;
+
+    case 'password.reset.post':
+        (new AuthController())->resetPassword();
         break;
 
     case 'logout':
@@ -78,7 +87,6 @@ switch ($page) {
         redirect('?page=dashboard');
         break;
 
-    // ── PROFIL ──────────────────────────────────────────────────
     case 'profil':
         (new AccountController())->profil();
         break;
@@ -87,7 +95,6 @@ switch ($page) {
         (new AccountController())->updateProfil();
         break;
 
-    // ── DOSEN ────────────────────────────────────────────────
     case 'dosen.bimbingan':
         (new DosenController())->bimbingan();
         break;
@@ -99,12 +106,10 @@ switch ($page) {
         break;
 
 
-    // ── DASHBOARD ─────────────────────────────────────────────
     case 'dashboard':
         (new DashboardController())->index();
         break;
 
-    // ── PENGAJUAN (Mahasiswa) ─────────────────────────────────
     case 'pengajuan':
         Auth::requireLogin();
         if (Auth::role() === ROLE_MAHASISWA) {
@@ -147,7 +152,6 @@ switch ($page) {
         (new PengajuanController())->delete();
         break;
 
-    // ── STAFF ─────────────────────────────────────────────────
     case 'staff':
         (new StaffController())->index();
         break;
@@ -188,7 +192,6 @@ switch ($page) {
         (new StaffController())->undoSKTerbit();
         break;
 
-    // ── KAPRODI ───────────────────────────────────────────────
     case 'kaprodi':
         (new KaprodiController())->index();
         break;
@@ -205,7 +208,6 @@ switch ($page) {
         (new KaprodiController())->prosesReview();
         break;
 
-    // ── DEWAN ─────────────────────────────────────────────────
     case 'dewan':
         (new DewanController())->index();
         break;
@@ -222,7 +224,6 @@ switch ($page) {
         (new DewanController())->prosesPembimbing();
         break;
 
-    // ── ADMIN / DATA MASTER ───────────────────────────────────
     case 'admin.mahasiswa':
         (new AdminController())->mahasiswa();
         break;
@@ -253,6 +254,10 @@ switch ($page) {
 
     case 'admin.dosen.update':
         (new AdminController())->dosenUpdate();
+        break;
+
+    case 'admin.dosen.bulk':
+        (new AdminController())->bulkDosen();
         break;
 
     case 'admin.dosen.delete':
@@ -299,7 +304,6 @@ switch ($page) {
         (new AdminController())->periodeDelete();
         break;
 
-    // ── SUPER ADMIN ───────────────────────────────────────────
     case 'superadmin.roles':
         (new SuperadminController())->roles();
         break;
@@ -336,7 +340,26 @@ switch ($page) {
         (new SuperadminController())->database();
         break;
 
-    // ── EXPORT ────────────────────────────────────────────────
+    case 'superadmin.pengumuman':
+        (new SuperadminController())->pengumuman();
+        break;
+
+    case 'superadmin.pengumuman.store':
+        (new SuperadminController())->storePengumuman();
+        break;
+
+    case 'superadmin.smtp':
+        (new SuperadminController())->smtpSettings();
+        break;
+
+    case 'superadmin.smtp.save':
+        (new SuperadminController())->saveSmtpSettings();
+        break;
+
+    case 'superadmin.smtp.test':
+        (new SuperadminController())->testSmtpSettings();
+        break;
+
     case 'export.excel':
         (new ExportController())->excel();
         break;
@@ -345,7 +368,6 @@ switch ($page) {
         (new SuperadminController())->backupDatabase();
         break;
 
-    // ── NOTIFIKASI ────────────────────────────────────────────
     case 'notif':
         Auth::requireLogin();
         $notifModel = new Notifikasi();
@@ -384,14 +406,12 @@ switch ($page) {
         redirect('?page=notif');
         break;
 
-    // ── ERROR PAGES ───────────────────────────────────────────
     case '403':
         http_response_code(403);
         $pageTitle = 'Akses Ditolak';
         require __DIR__ . '/views/errors/403.php';
         break;
 
-    // ── DEFAULT (halaman tidak ditemukan) ─────────────────────
     default:
         http_response_code(404);
         $pageTitle = 'Halaman Tidak Ditemukan';

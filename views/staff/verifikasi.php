@@ -15,7 +15,6 @@ require BASE_PATH . '/views/layouts/header.php';
 <?php renderFlash(); ?>
 
 <div class="row g-4">
-    <!-- Info Pengajuan -->
     <div class="col-lg-8">
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between">
@@ -66,7 +65,6 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
 
-        <!-- Form Verifikasi -->
         <?php if ($pengajuan['status'] === 'diajukan'): ?>
         <div class="card border-primary">
             <div class="card-header bg-primary text-white">
@@ -116,7 +114,7 @@ require BASE_PATH . '/views/layouts/header.php';
         ?>
         <div class="card mb-4 border-0 shadow-sm border-start border-info border-4">
             <div class="card-header bg-white py-3">
-                <h6 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2 text-info"></i>Hasil Review Dewan Bimbingan</h6>
+                <h6 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2 text-info"></i>Hasil Review Komisi Tugas Akhir</h6>
             </div>
             <div class="card-body">
                 <div class="row g-3">
@@ -154,7 +152,6 @@ require BASE_PATH . '/views/layouts/header.php';
         <?php endif; ?>
     </div>
 
-    <!-- Timeline -->
     <div class="col-lg-4">
         <div class="card">
             <div class="card-header"><i class="bi bi-activity me-2 text-primary"></i>Riwayat Status</div>

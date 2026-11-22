@@ -12,7 +12,6 @@ $currentPage = get('page', 'dashboard');
     </div>
 
     <nav class="sidebar-nav">
-        <!-- Dashboard -->
         <a href="?page=dashboard"
            class="sidebar-item <?= str_starts_with($currentPage, 'dashboard') ? 'active' : '' ?>">
             <i class="bi bi-speedometer2"></i>
@@ -148,7 +147,6 @@ $currentPage = get('page', 'dashboard');
         </a>
         <?php endif; ?>
 
-        <!-- Profil Saya (selalu ada, bukan dinamis) -->
         <div class="sidebar-header mt-3"><span class="sidebar-label">AKUN</span></div>
         <a href="?page=profil"
            class="sidebar-item <?= $currentPage === 'profil' ? 'active' : '' ?>">

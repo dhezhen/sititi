@@ -3,7 +3,6 @@ $pageTitle = 'Dashboard Mahasiswa';
 require BASE_PATH . '/views/layouts/header.php';
 ?>
 
-<!-- Page Header -->
 <div class="page-header">
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
@@ -16,7 +15,6 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
-<!-- Stat Cards -->
 <div class="row g-4 mb-4">
     <div class="col-6 col-md-3">
         <div class="stat-card stat-primary">
@@ -50,9 +48,7 @@ require BASE_PATH . '/views/layouts/header.php';
 
 
 <div class="row g-4">
-    <!-- Riwayat Pengajuan -->
     <div class="col-lg-8">
-        <!-- Pembimbing Saya (Jika Ada) -->
         <?php if (!empty($pembimbing)): ?>
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3">
@@ -189,7 +185,6 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
     </div>
 
-    <!-- Notifikasi & Quick Action -->
     <div class="col-lg-4">
         <div class="card mb-4">
             <div class="card-header">

@@ -31,7 +31,11 @@ require BASE_PATH . '/views/layouts/header.php';
                 <div class="d-flex align-items-start gap-3">
                     <div class="notif-dot <?= !$n['is_read'] ? 'active' : '' ?>" style="margin-top:6px;width:10px;height:10px;flex-shrink:0"></div>
                     <div class="flex-grow-1">
-                        <div class="<?= !$n['is_read'] ? 'fw-semibold' : '' ?>"><?= e($n['pesan']) ?></div>
+                        <?php $messageParts = explode("\n\n", $n['pesan'], 2); ?>
+                        <div class="<?= !$n['is_read'] ? 'fw-semibold' : '' ?>"><?= e($messageParts[0]) ?></div>
+                        <?php if (isset($messageParts[1])): ?>
+                        <div class="mt-1 text-break"><?= nl2br(e($messageParts[1])) ?></div>
+                        <?php endif; ?>
                         <?php if ($n['judul_pengajuan']): ?>
                         <div class="small text-muted mt-1">
                             <i class="bi bi-file-earmark-text me-1"></i><?= e(truncate($n['judul_pengajuan'], 60)) ?>

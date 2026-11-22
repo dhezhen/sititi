@@ -85,7 +85,6 @@ class KaprodiController {
         if (!$pengajuan) { setFlash('danger', 'Tidak ditemukan.'); redirect('?page=kaprodi'); }
 
         if ($pengajuan['status'] === STATUS_DIVERIFIKASI) {
-            // Step 1: Kaprodi Assigns Advisor & Dewan -> Go to Dewan
             if ($aksi === 'setujui') {
                 if (!$p1) { setFlash('danger', 'Pembimbing 1 wajib ditentukan.'); redirect('?page=kaprodi.review&id=' . $id); }
                 $dw1 = (int)post('dewan_1_id');
@@ -117,7 +116,6 @@ class KaprodiController {
                 setFlash('success', 'Berhasil diteruskan ke Dewan.');
             }
         } elseif ($pengajuan['status'] === STATUS_DIREVIEW_DEWAN) {
-            // Step 2: Final Approval after Dewan Review
             if ($aksi === 'setujui') {
                 $this->pengajuanModel->updateStatus($id, STATUS_PEMBIMBING, $catatan ?: 'Disetujui Kaprodi & Diajukan ke Fakultas.');
                 $this->logModel->add($id, $pengajuan['status'], STATUS_PEMBIMBING, Auth::id(), $catatan ?: 'Persetujuan Akhir Kaprodi.');

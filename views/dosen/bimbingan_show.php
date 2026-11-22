@@ -17,7 +17,6 @@ require BASE_PATH . '/views/layouts/header.php';
 <?php renderFlash(); ?>
 
 <div class="row g-4">
-    <!-- Info Mahasiswa & Judul -->
     <div class="col-lg-5">
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-header bg-white py-3">
@@ -74,9 +73,7 @@ require BASE_PATH . '/views/layouts/header.php';
         </div>
     </div>
 
-    <!-- Catatan Bimbingan -->
     <div class="col-lg-7">
-        <!-- Form Tambah Catatan -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
                 <h6 class="fw-bold mb-3"><i class="bi bi-plus-lg me-2 text-primary"></i>Tambah Masukan / Saran</h6>
@@ -96,7 +93,6 @@ require BASE_PATH . '/views/layouts/header.php';
             </div>
         </div>
 
-        <!-- Riwayat Masukan -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white py-3">
                 <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2 text-primary"></i>Riwayat Masukan</h6>

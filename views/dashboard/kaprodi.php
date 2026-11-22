@@ -172,7 +172,6 @@ require BASE_PATH . '/views/layouts/header.php';
 </div>
 
 <div class="row g-4 mt-2">
-    <!-- Analitik Visual (Charts) -->
     <div class="col-lg-6">
         <div class="card h-100">
             <div class="card-header">
@@ -195,7 +194,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Statistik per Angkatan -->
 <div class="card mt-4 border-0 shadow-sm">
     <div class="card-header bg-white py-3">
         <h6 class="mb-0 fw-bold"><i class="bi bi-graph-up me-2 text-primary"></i>Monitoring Pengajuan Per Angkatan (Prodi Anda)</h6>
@@ -243,12 +241,10 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Tabel Rekap Beban Bimbingan -->
 <?php require BASE_PATH . '/views/components/workload_table.php'; ?>
 
 <?php require BASE_PATH . '/views/layouts/footer.php'; ?>
 
-<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {

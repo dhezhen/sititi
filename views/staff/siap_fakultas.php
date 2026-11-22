@@ -22,7 +22,6 @@ require BASE_PATH . '/views/layouts/header.php';
 
 <?php renderFlash(); ?>
 
-<!-- Summary Cards -->
 <div class="row g-3 mb-4">
     <div class="col-md-4">
         <div class="card border-0 shadow-sm h-100">
@@ -70,7 +69,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Search -->
 <div class="card mb-4 border-0 shadow-sm">
     <div class="card-body py-3 px-4">
         <form method="GET" class="row g-3 align-items-center">
@@ -91,7 +89,6 @@ require BASE_PATH . '/views/layouts/header.php';
     </div>
 </div>
 
-<!-- Data Table -->
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
         <span>
